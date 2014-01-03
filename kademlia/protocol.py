@@ -1,16 +1,27 @@
-from twisted.python import log
+import random
 
 from rpcudp.protocol import RPCProtocol
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
+from kademlia.log import Logger
 
 
 class KademliaProtocol(RPCProtocol):
-    def __init__(self, node, storage, ksize, alpha):
+    def __init__(self, node, storage, ksize):
         RPCProtocol.__init__(self, node.port)
-        self.router = RoutingTable(self, ksize, alpha)
+        self.router = RoutingTable(self, ksize)
         self.storage = storage
         self.sourceID = node.id
+        self.log = Logger(system=self)
+
+    def getRefreshIDs(self):
+        """
+        Get ids to search for to keep old buckets up to date.
+        """
+        ids = []
+        for bucket in self.router.getLonelyBuckets():
+            ids.append(random.randint(*bucket.range))
+        return ids
 
     def rpc_ping(self, sender, nodeid):
         source = Node(sender[0], sender[1], nodeid)
@@ -20,13 +31,15 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(sender[0], sender[1], nodeid)
         self.router.addContact(source)
+        self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
 
     def rpc_find_node(self, sender, nodeid, key):
+        self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
         source = Node(sender[0], sender[1], nodeid)
         self.router.addContact(source)
         node = Node(None, None, key)
-        return map(tuple, self.router.findNeighbors(node))
+        return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
         source = Node(sender[0], sender[1], nodeid)
@@ -62,7 +75,9 @@ class KademliaProtocol(RPCProtocol):
         we get no response, make sure it's removed from the routing table.
         """
         if result[0]:
+            self.log.info("got response from %s, adding to router" % node)
             self.router.addContact(node)
         else:
+            self.log.debug("no response from %s, removing from router" % node)
             self.router.removeContact(node)
         return result

@@ -1,6 +1,7 @@
 import time
 from collections import OrderedDict
 
+
 class ForgetfulStorage(object):
     def __init__(self, ttl=7200):
         """
@@ -23,6 +24,12 @@ class ForgetfulStorage(object):
             pop += 1
         for _ in xrange(pop):
             self.data.popitem(first=True)
+
+    def get(self, key, default=None):
+        self.cull()
+        if key in self.data:
+            return self.data[key][1]
+        return default
 
     def __getitem__(self, key):
         self.cull()

@@ -1,8 +1,14 @@
 """
 General catchall for functions that don't make sense as methods.
 """
-
+import hashlib
 from twisted.internet import defer
+
+
+def digest(s):
+    if not isinstance(s, str):
+        s = str(s)
+    return hashlib.sha1(s).digest()
 
 def deferredDict(d):
     """
@@ -22,6 +28,6 @@ def deferredDict(d):
         for index in range(len(results)):
             rvalue[names[index]] = results[index][1]
         return rvalue
-    
+
     dl = defer.DeferredList(d.values())
     return dl.addCallback(handle, d.keys())

@@ -1,12 +1,16 @@
 from operator import itemgetter
 import heapq
 
+
 class Node:
     def __init__(self, ip, port, id):
         self.ip = ip
-        self.port = port        
+        self.port = port
         self.id = id
         self.long_id = long(id.encode('hex'), 16)
+
+    def sameHomeAs(self, node):
+        return self.ip == node.ip and self.port == node.port
 
     def distanceTo(self, node):
         return self.long_id ^ node.long_id
@@ -19,6 +23,9 @@ class Node:
 
     def __repr__(self):
         return repr([self.ip, self.port, self.long_id])
+
+    def __str__(self):
+        return "%s:%s" % (self.ip, str(self.port))
 
 
 class NodeHeap(object):
