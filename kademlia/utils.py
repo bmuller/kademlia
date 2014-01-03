@@ -10,6 +10,7 @@ def digest(s):
         s = str(s)
     return hashlib.sha1(s).digest()
 
+
 def deferredDict(d):
     """
     Just like a C{defer.DeferredList} but instead accepts and returns a C{dict}.

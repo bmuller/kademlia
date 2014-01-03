@@ -33,7 +33,7 @@ class SpiderCrawl(object):
         self.nearest = NodeHeap(self.ksize)
         self.node = node
         self.lastIDsCrawled = []
-        self.log = Logger(system=self)        
+        self.log = Logger(system=self)
         self.log.info("creating spider with peers: %s" % peers)
         for peer in peers:
             self.nearest.push(self.node.distanceTo(peer), peer)
@@ -179,11 +179,13 @@ class Server(object):
         TODO - if no one responds, freak out
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
-        dkey = digest(key)        
+        dkey = digest(key)
+
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
             ds = [self.protocol.callStore(node, dkey, value) for node in nodes]
             return defer.gatherResults(ds)
+
         node = Node(None, None, dkey)
         nearest = self.protocol.router.findNeighbors(node)
         spider = SpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
