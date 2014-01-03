@@ -1,58 +1,13 @@
 import hashlib
 import random
-import heapq
 
-from twisted.internet import log, defer
+from twisted.internet import defer
+from twisted.python import log
 
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import deferredDict
 from kademlia.storage import ForgetfulStorage
-
-ALPHA = 3
-
-class NodeHeap(object):
-    def __init__(self, maxsize):
-        self.heap = []
-        self.contacted = set()
-        self.maxsize = maxsize
-
-    def remove(self, peerIDs):
-        """
-        Remove a list of peer ids from this heap.  Note that while this
-        heap retains a constant visible size (based on the iterator), it's
-        actual size may be quite a bit larger than what's exposed.  Therefore,
-        removal of nodes may not change the visible size as previously added
-        nodes suddenly become visible.
-        """
-        peerIDs = set(peerIDs)        
-        if len(peerIDs) == 0:
-            return
-        nheap = []
-        for distance, node in self.heap:
-            if not node.id in peerIDs:
-                heapq.heappush(nheap, (distance, node))
-        self.heap = nheap
-
-    def allBeenContacted(self):
-        return len(self.getUncontacted()) == 0
-
-    def getIDs(self):
-        return [n.id for n in self]
-
-    def markContacted(self, node):
-        self.contacted.add(node.id)
-
-    def push(self, distance, node):
-        heapq.heappush(self.heap, (distance, node))
-
-    def __len__(self):
-        return min(len(self.heap), self.maxsize)
-
-    def __iter__(self):
-        return iter(heapq.nsmallest(self.maxsize, self.heap))
-
-    def getUncontacted(self):
-        return [n for n in self if not n.id in self.contacted]
+from kademlia.node import Node, NodeHeap
 
 
 class SpiderCrawl(object):
@@ -64,14 +19,15 @@ class SpiderCrawl(object):
         # yet queried
         # repeat, unless nearest list has all been queried, then ur done
     
-    def __init__(self, protocol, node, peers):
+    def __init__(self, protocol, node, peers, ksize, alpha):
         self.protocol = protocol
-        self.nearest = NodeHeap(KSIZE)
+        self.ksize = ksize
+        self.alpha = alpha
+        self.nearest = NodeHeap(self.ksize)
         self.node = node
         self.lastIDsCrawled = []
         for peer in peers:
             self.nearest.push(self.node.distanceTo(peer), peer)
-
 
     def findNodes(self):
         return self.find(self.protocol.callFindNode)        
@@ -85,7 +41,7 @@ class SpiderCrawl(object):
         return d.addCallback(handle)
 
     def find(self, rpcmethod):
-        count = ALPHA
+        count = self.alpha
         if self.nearest.getIDs() == self.lastIDsCrawled:
             count = len(self.nearest)
         self.lastIDsCrawled = self.nearest.getIDs()
@@ -118,21 +74,32 @@ class SpiderCrawl(object):
 
 class Server:
     def __init__(self, port, ksize=20, alpha=3):
+        self.ksize = ksize
+        self.alpha = alpha
         # 160 bit random id        
         rid = hashlib.sha1(str(random.getrandbits(255))).digest()
         storage = ForgetfulStorage()
-        self.node = Node('127.0.0.1', port, rid)        
-        self.prototcol = KademliaProtocol(self.node, storage, ksize, alpha)
+        self.node = Node('127.0.0.1', port, rid)
+        self.protocol = KademliaProtocol(self.node, storage, ksize, alpha)
 
-    def bootstrap(self, nodes):
-        nodes = [ Node(*n) for n in nodes ]
-        spider = NetworkSpider(self.protocol, self.node, nodes)
-        return spider.findNodes()
+    def bootstrap(self, addrs):
+        def initTable(results):
+            nodes = []
+            for addr, result in results.items():
+               if result[0]:
+                   nodes.append(Node(addr[0], addr[1], result[1]))
+            spider = SpiderCrawl(self.protocol, self.node, nodes, self.ksize, self.alpha)
+            return spider.findNodes()
+
+        ds = {}
+        for addr in addrs:
+            ds[addr] = self.protocol.ping(addr, self.node.id)
+        return deferredDict(ds).addCallback(initTable)
 
     def get(self, key):
         node = Node(None, None, key)
-        nearest = self.router.findNeighbors(node, ALPHA)
-        spider = NetworkSpider(self.protocol, node, nearest)
+        nearest = self.router.findNeighbors(node)
+        spider = SpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.findValue()
 
     def set(self, key, value):
@@ -141,6 +108,6 @@ class Server:
             ds = [self.protocol.callStore(node) for node in nodes]
             return defer.gatherResults(ds)
         node = Node(None, None, key)
-        nearest = self.router.findNeighbors(node, ALPHA)
-        spider = NetworkSpider(self.protocol, nearest)
+        nearest = self.router.findNeighbors(node)
+        spider = SpiderCrawl(self.protocol, nearest, self.ksize, self.alpha)
         return spider.findNodes(node).addCallback(store)

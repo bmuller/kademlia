@@ -1,13 +1,16 @@
 import heapq
+import time
 from collections import OrderedDict
 
 from twisted.internet.task import LoopingCall
+from twisted.internet import defer
 
 class KBucket(object):
-    def __init__(self, rangeLower, rangeUpper):
+    def __init__(self, rangeLower, rangeUpper, ksize):
         self.range = (rangeLower, rangeUpper)
         self.nodes = OrderedDict()
         self.touchLastUpdated()
+        self.ksize = ksize
 
     def touchLastUpdated(self):
         self.lastUpdated = time.time()
@@ -17,8 +20,8 @@ class KBucket(object):
 
     def split(self):
         midpoint = self.range[1] - ((self.range[1] - self.range[0]) / 2)
-        one = KBucket(self.range[0], midpoint)
-        two = KBucket(midpoint+1, self.range[1])
+        one = KBucket(self.range[0], midpoint, self.ksize)
+        two = KBucket(midpoint+1, self.range[1], self.ksize)
         for node in self.nodes.values():
             bucket = one if node.long_id <= midpoint else two
             bucket.nodes[node.id] = node
@@ -39,7 +42,7 @@ class KBucket(object):
         if node.id in self.nodes:
             del self.nodes[node.id]
             self.nodes[node.id] = node
-        elif len(self) < KSIZE:
+        elif len(self) < self.ksize:
             self.nodes[node.id] = node
         else:
             return False
@@ -58,7 +61,7 @@ class KBucket(object):
 class TableTraverser(object):
     def __init__(self, table, startNode):
         index = table.getBucketFor(startNode)
-        bucket[index].touchLastUpdated()
+        table.buckets[index].touchLastUpdated()
         self.currentNodes = table.buckets[index].getNodes()
         self.leftBuckets = table.buckets[:index]
         self.rightBuckets = table.buckets[(index+1):]
@@ -88,9 +91,11 @@ class TableTraverser(object):
 
 
 class RoutingTable(object):
-    def __init__(self, protocol):
+    def __init__(self, protocol, ksize, alpha):
         self.protocol = protocol
-        self.buckets = [KBucket(0, 2**160)]
+        self.ksize = ksize
+        self.alpha = alpha
+        self.buckets = [KBucket(0, 2**160, ksize)]
         LoopingCall(self.refresh).start(3600)
 
     def splitBucket(self, index):
@@ -105,7 +110,7 @@ class RoutingTable(object):
         for bucket in self.buckets:
             if bucket.lastUpdated < (time.time() - 3600):
                 node = Node(None, None, random.randint(*bucket.range))
-                nearest = self.findNeighbors(node, ALPHA)
+                nearest = self.findNeighbors(node, self.alpha)
                 spider = NetworkSpider(self.protocol, node, nearest)
                 ds.append(spider.findNodes())
         return defer.gatherResults(ds)
@@ -115,7 +120,7 @@ class RoutingTable(object):
         self.buckets[index].removeNode(node)
 
     def addContact(self, node):
-        index = self.getBucketFor(self, node)
+        index = self.getBucketFor(node)
         bucket = self.buckets[index]
 
         # this will succeed unless the bucket is full
@@ -136,7 +141,8 @@ class RoutingTable(object):
             if node.long_id < bucket.range[1]:
                 return index
 
-    def findNeighbors(self, node, k=KSIZE):
+    def findNeighbors(self, node, k=None):
+        k = k or self.ksize
         nodes = []
         for neighbor in TableTraverser(self, node):
             if neighbor.id != node.id:
