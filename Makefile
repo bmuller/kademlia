@@ -1,5 +1,8 @@
 PYDOCTOR=pydoctor
 
+test:
+	trial kademlia
+
 docs:
 	$(PYDOCTOR) --make-html --html-output apidoc --add-package kademlia --project-name=kademlia --project-url=http://github.com/bmuller/kademlia --html-use-sorttable --html-use-splitlinks --html-shorten-lists 
 
@@ -9,6 +12,3 @@ lint:
 
 install:
 	python setup.py install
-
-test:
-	trial kademlia

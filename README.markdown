@@ -1,18 +1,49 @@
 # [Kademlia](http://en.wikipedia.org/wiki/Kademlia) in Python
+[![Build Status](https://secure.travis-ci.org/bmuller/kademlia.png?branch=master)](https://travis-ci.org/bmuller/kademlia)
 
 ## Installation
 
 ```
-easy_install kademlia
+pip install kademlia
 ```
 
 ## Usage
 *This assumes you have a working familiarity with Twisted.*
 
-
+Assuming you want to connect to an existing network (run the standalone server example below if you don't have a network):
 
 ```python
 from twisted.internet import reactor
+from twisted.python import log
+from kademlia.network import Server
+import sys
 
-...
+# log to std out
+log.startLogging(sys.stdout)
+
+def quit(result):
+    print "Key result:", result
+    reactor.stop()
+
+def get(result, server):
+    reactor.stop()
+    #return server.get("a key").addCallback(quit)
+
+def done(found, server):
+    log.msg("Found nodes: %s" % found)
+    return server.set("a key", "a value").addCallback(get, server)
+
+server = Server()
+# next line, or use reactor.listenUDP(5678, server)
+server.listen(5678)
+server.bootstrap([('127.0.0.1', 1234)]).addCallback(done, two)
+
+reactor.run()
+```
+
+## Stand-alone Server
+If all you want to do is run a local server, just start the example server:
+
+```
+twistd -noy server.tac
 ```

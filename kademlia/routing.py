@@ -93,13 +93,15 @@ class RoutingTable(object):
     def __init__(self, protocol, ksize):
         self.protocol = protocol
         self.ksize = ksize
-        self.buckets = [KBucket(0, 2 ** 160, ksize)]
+        self.flush()
+
+    def flush(self):
+        self.buckets = [KBucket(0, 2 ** 160, self.ksize)]
 
     def splitBucket(self, index):
         one, two = self.buckets[index].split()
         self.buckets[index] = one
         self.buckets.insert(index + 1, two)
-
         # todo split one/two if needed based on section 4.2
 
     def getLonelyBuckets(self):

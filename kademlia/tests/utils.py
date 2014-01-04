@@ -1,18 +1,29 @@
+"""
+Utility functions for tests.
+"""
 import random
+import hashlib
+from struct import pack
 
-from rpcudp.protocol import RPCProtocol
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
-from kademlia.log import Logger
 
 
-class KademliaProtocol(RPCProtocol):
-    def __init__(self, sourceID, storage, ksize):
-        RPCProtocol.__init__(self)
+def mknode(ip=None, port=None, id=None, intid=None):
+    """
+    Make a node.  Created a random id if not specified.
+    """
+    if intid is not None:
+        id = pack('>l', intid)
+    id = id or hashlib.sha1(str(random.getrandbits(255))).digest()
+    return Node(ip, port, id)
+
+
+class FakeProtocol(object):
+    def __init__(self, sourceID, ksize=20):
         self.router = RoutingTable(self, ksize)
-        self.storage = storage
+        self.storage = {}
         self.sourceID = sourceID
-        self.log = Logger(system=self)
 
     def getRefreshIDs(self):
         """

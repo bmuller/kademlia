@@ -4,7 +4,7 @@ Package for interacting on the network at a high level.
 import random
 
 from twisted.internet.task import LoopingCall
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 
 from kademlia.log import Logger
 from kademlia.protocol import KademliaProtocol
@@ -113,7 +113,7 @@ class Server(object):
     to start listening as an active node on the network.
     """
 
-    def __init__(self, port, ksize=20, alpha=3):
+    def __init__(self, ksize=20, alpha=3):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -125,9 +125,12 @@ class Server(object):
         self.alpha = alpha
         self.log = Logger(system=self)
         storage = ForgetfulStorage()
-        self.node = Node('127.0.0.1', port, digest(random.getrandbits(255)))
-        self.protocol = KademliaProtocol(self.node, storage, ksize)
+        self.node = Node(None, None, digest(random.getrandbits(255)))
+        self.protocol = KademliaProtocol(self.node.id, storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
+
+    def listen(self, port):
+        return reactor.listenUDP(port, self.protocol)
 
     def refreshTable(self):
         """
