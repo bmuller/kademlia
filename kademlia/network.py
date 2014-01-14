@@ -2,6 +2,7 @@
 Package for interacting on the network at a high level.
 """
 import random
+import pickle
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import defer, reactor
@@ -93,7 +94,7 @@ class SpiderCrawl(object):
             # where <value> will be a list of tuples if not found or
             # a dictionary of {'value': v} where v is the value desired
             if not response[0]:
-                toremove.push(peerid)
+                toremove.append(peerid)
             elif isinstance(response[1], dict):
                 self.log.debug("found value for %i" % self.node.long_id)
                 return response[1]
@@ -235,3 +236,30 @@ class Server(object):
         nearest = self.protocol.router.findNeighbors(node)
         spider = SpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.findNodes().addCallback(store)
+
+    def save(self, fname):
+        data = { 'ksize': self.ksize,
+                 'alpha': self.alpha,
+                 'id': self.node.id,
+                 'neighbors': self.bootstrappableNeighbors() }
+        with open(fname, 'w') as f:
+            pickle.dump(data, f)
+
+    @classmethod
+    def load(self, fname):
+        with open(fname, 'r') as f:
+            data = pickle.load(f)
+        s = Server(data['ksize'], data['alpha'], data['id'])
+        if len(data['neighbors']) > 0:
+            s.bootstrap(data['neighbors'])
+        return s
+
+    def saveRegularly(self, fname, frequency=600):
+        """
+        @param fname: File to save retularly to
+        @param frequencey: Frequency in seconds that the state
+        should be saved.  By default, 10 minutes.
+        """
+        loop = LoopingCall(self.save, fname)
+        loop.start(frequency)
+        return loop

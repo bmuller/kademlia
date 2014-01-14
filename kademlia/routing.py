@@ -112,7 +112,7 @@ class RoutingTable(object):
         return [b for b in self.buckets if b.lastUpdated < (time.time() - 3600)]
 
     def removeContact(self, node):
-        index = self.getBucketFor(self, node)
+        index = self.getBucketFor(node)
         self.buckets[index].removeNode(node)
 
     def addContact(self, node):
