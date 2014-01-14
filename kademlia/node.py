@@ -19,7 +19,7 @@ class Node:
         """
         Enables use of Node as a tuple - i.e., tuple(node) works.
         """
-        return iter([self.ip, self.port, self.id])
+        return iter([self.id, self.ip, self.port])
 
     def __repr__(self):
         return repr([self.long_id, self.ip, self.port])

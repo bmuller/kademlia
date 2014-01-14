@@ -1,3 +1,5 @@
+*.pickle
+*.pid
 _trial_temp
 apidoc
 *.pyc

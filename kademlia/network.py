@@ -70,6 +70,7 @@ class SpiderCrawl(object):
              yet queried
           4. repeat, unless nearest list has all been queried, then ur done
         """
+        self.log.info("crawling with nearest: %s" % str(tuple(self.nearest)))
         count = self.alpha
         if self.nearest.getIDs() == self.lastIDsCrawled:
             self.log.info("last iteration same as current - checking all in list now")
@@ -160,14 +161,21 @@ class Server(object):
         storing them if this server is going down for a while.  When it comes
         back up, the list of nodes can be used to bootstrap.
         """
-        return self.protocol.router.findNeighbors(self.node)
+        neighbors = self.protocol.router.findNeighbors(self.node)
+        return [ tuple(n)[-2:] for n in neighbors ]
 
     def bootstrap(self, addrs):
         """
         Bootstrap the server by connecting to other known nodes in the network.
 
-        @param addrs: A C{list} of (ip, port) C{tuple}s
+        @param addrs: A C{list} of (ip, port) C{tuple}s.  Note that only IP addresses
+        are acceptable - hostnames will cause an error.
         """
+        # if the transport hasn't been initialized yet, wait a second
+        if self.protocol.transport == None:
+            reactor.callLater(1, self.bootstrap, addrs)
+            return
+
         def initTable(results):
             nodes = []
             for addr, result in results.items():
