@@ -23,6 +23,9 @@ class KademliaProtocol(RPCProtocol):
             ids.append(random.randint(*bucket.range))
         return ids
 
+    def rpc_stun(self, sender):
+        return sender
+
     def rpc_ping(self, sender, nodeid):
         source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)

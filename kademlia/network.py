@@ -172,7 +172,7 @@ class Server(object):
         are acceptable - hostnames will cause an error.
         """
         # if the transport hasn't been initialized yet, wait a second
-        if self.protocol.transport == None:
+        if self.protocol.transport is None:
             reactor.callLater(1, self.bootstrap, addrs)
             return
 
@@ -188,6 +188,22 @@ class Server(object):
         for addr in addrs:
             ds[addr] = self.protocol.ping(addr, self.node.id)
         return deferredDict(ds).addCallback(initTable)
+
+    def inetVisibleIP(self):
+        """
+        Get the internet visible IP's of this node as other nodes see it.
+
+        @return: An C{list} of IP's.  If no one can be contacted, then the
+        C{list} will be empty.
+        """
+        def handle(results):
+            ips = [ result[0] for result in results if result is not None ]
+            self.log.debug("other nodes think our ip is %s" % str(ips))
+            return ips
+        ds = []
+        for neighbor in self.bootstrappableNeighbors():
+            ds.append(self.protocol.router.stun(neighbor))
+        return defer.gatherResults(ds).addCallback(handle)
 
     def get(self, key):
         """
