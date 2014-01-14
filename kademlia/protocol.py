@@ -24,25 +24,25 @@ class KademliaProtocol(RPCProtocol):
         return ids
 
     def rpc_ping(self, sender, nodeid):
-        source = Node(sender[0], sender[1], nodeid)
+        source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         return self.sourceID
 
     def rpc_store(self, sender, nodeid, key, value):
-        source = Node(sender[0], sender[1], nodeid)
+        source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
-        source = Node(sender[0], sender[1], nodeid)
+        source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
-        node = Node(None, None, key)
+        node = Node(key)
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
-        source = Node(sender[0], sender[1], nodeid)
+        source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         value = self.storage.get(key, None)
         if value is None:

@@ -3,10 +3,10 @@ import heapq
 
 
 class Node:
-    def __init__(self, ip, port, id):
+    def __init__(self, id, ip=None, port=None):
+        self.id = id
         self.ip = ip
         self.port = port
-        self.id = id
         self.long_id = long(id.encode('hex'), 16)
 
     def sameHomeAs(self, node):
@@ -22,7 +22,7 @@ class Node:
         return iter([self.ip, self.port, self.id])
 
     def __repr__(self):
-        return repr([self.ip, self.port, self.long_id])
+        return repr([self.long_id, self.ip, self.port])
 
     def __str__(self):
         return "%s:%s" % (self.ip, str(self.port))

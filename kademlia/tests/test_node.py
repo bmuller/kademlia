@@ -11,7 +11,7 @@ from kademlia.tests.utils import mknode
 class NodeTest(unittest.TestCase):
     def test_longID(self):
         rid = hashlib.sha1(str(random.getrandbits(255))).digest()
-        n = Node(None, None, rid)
+        n = Node(rid)
         self.assertEqual(n.long_id, long(rid.encode('hex'), 16))
 
     def test_distanceCalculation(self):
@@ -19,8 +19,8 @@ class NodeTest(unittest.TestCase):
         ridtwo = hashlib.sha1(str(random.getrandbits(255)))
 
         shouldbe = long(ridone.hexdigest(), 16) ^ long(ridtwo.hexdigest(), 16)
-        none = Node(None, None, ridone.digest())
-        ntwo = Node(None, None, ridtwo.digest())
+        none = Node(ridone.digest())
+        ntwo = Node(ridtwo.digest())
         self.assertEqual(none.distanceTo(ntwo), shouldbe)
 
 
@@ -37,7 +37,7 @@ class NodeHeapTest(unittest.TestCase):
 
     def test_iteration(self):
         heap = NodeHeap(5)
-        nodes = [mknode(id=digest(x)) for x in range(10)]
+        nodes = [mknode(digest(x)) for x in range(10)]
         for index, node in enumerate(nodes):
             heap.push(index, node)
         for index, node in enumerate(heap):
@@ -46,7 +46,7 @@ class NodeHeapTest(unittest.TestCase):
 
     def test_remove(self):
         heap = NodeHeap(5)
-        nodes = [mknode(id=digest(x)) for x in range(10)]
+        nodes = [mknode(digest(x)) for x in range(10)]
         for index, node in enumerate(nodes):
             heap.push(index, node)
 

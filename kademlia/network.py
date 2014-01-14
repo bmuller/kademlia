@@ -86,7 +86,6 @@ class SpiderCrawl(object):
         """
         Handle the result of an iteration in C{_find}.
         """
-        print "got some responses: ", responses
         toremove = []
         for peerid, response in responses.items():
             # response will be a tuple of (<response received>, <value>)
@@ -113,7 +112,7 @@ class Server(object):
     to start listening as an active node on the network.
     """
 
-    def __init__(self, ksize=20, alpha=3):
+    def __init__(self, ksize=20, alpha=3, id=None):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -125,11 +124,17 @@ class Server(object):
         self.alpha = alpha
         self.log = Logger(system=self)
         storage = ForgetfulStorage()
-        self.node = Node(None, None, digest(random.getrandbits(255)))
+        self.node = Node(id or digest(random.getrandbits(255)))
         self.protocol = KademliaProtocol(self.node.id, storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
     def listen(self, port):
+        """
+        Start listening on the given port.
+
+        This is the same as calling:
+        C{reactor.listenUDP(port, server.protocol)}
+        """
         return reactor.listenUDP(port, self.protocol)
 
     def refreshTable(self):
@@ -139,11 +144,23 @@ class Server(object):
         """
         ds = []
         for id in self.protocol.getRefreshIDs():
-            node = Node(None, None, id)
+            node = Node(id)
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
             spider = SpiderCrawl(self.protocol, node, nearest)
             ds.append(spider.findNodes())
         return defer.gatherResults(ds)
+
+    def bootstrappableNeighbors(self):
+        """
+        Get a C{list} of (ip, port) C{tuple}s suitable for use as an argument
+        to the bootstrap method.
+
+        The server should have been bootstrapped
+        already - this is just a utility for getting some neighbors and then
+        storing them if this server is going down for a while.  When it comes
+        back up, the list of nodes can be used to bootstrap.
+        """
+        return self.protocol.router.findNeighbors(self.node)
 
     def bootstrap(self, addrs):
         """
@@ -155,7 +172,7 @@ class Server(object):
             nodes = []
             for addr, result in results.items():
                 if result[0]:
-                    nodes.append(Node(addr[0], addr[1], result[1]))
+                    nodes.append(Node(result[1], addr[0], addr[1]))
             spider = SpiderCrawl(self.protocol, self.node, nodes, self.ksize, self.alpha)
             return spider.findNodes()
 
@@ -170,7 +187,7 @@ class Server(object):
 
         @return: C{None} if not found, the value otherwise.
         """
-        node = Node(None, None, digest(key))
+        node = Node(digest(key))
         nearest = self.protocol.router.findNeighbors(node)
         spider = SpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.findValue()
@@ -189,7 +206,7 @@ class Server(object):
             ds = [self.protocol.callStore(node, dkey, value) for node in nodes]
             return defer.gatherResults(ds)
 
-        node = Node(None, None, dkey)
+        node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         spider = SpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.findNodes().addCallback(store)
