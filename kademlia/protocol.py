@@ -36,6 +36,7 @@ class KademliaProtocol(RPCProtocol):
         self.router.addContact(source)
         self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
+        return True
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))

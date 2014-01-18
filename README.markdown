@@ -1,5 +1,7 @@
-# [Kademlia](http://en.wikipedia.org/wiki/Kademlia) in Python
+# Kademlia Distributed Hash Table in Python
 [![Build Status](https://secure.travis-ci.org/bmuller/kademlia.png?branch=master)](https://travis-ci.org/bmuller/kademlia)
+
+This library is an asynchronous Python implementation of the [Kademlia distributed hash table](http://en.wikipedia.org/wiki/Kademlia).  It uses [Twisted]() to provide asynchronous communication.  The nodes communicate using [RPC over UDP](https://github.com/bmuller/rpcudp) to communiate, meaning that it is capable of working behind a [NAT](http://en.wikipedia.org/wiki/NAT).
 
 ## Installation
 
@@ -26,17 +28,16 @@ def quit(result):
     reactor.stop()
 
 def get(result, server):
-    reactor.stop()
-    #return server.get("a key").addCallback(quit)
+    return server.get("a key").addCallback(quit)
 
 def done(found, server):
     log.msg("Found nodes: %s" % found)
     return server.set("a key", "a value").addCallback(get, server)
 
 server = Server()
-# next line, or use reactor.listenUDP(5678, server)
+# next line, or use reactor.listenUDP(5678, server.protocol)
 server.listen(5678)
-server.bootstrap([('127.0.0.1', 1234)]).addCallback(done, two)
+server.bootstrap([('127.0.0.1', 1234)]).addCallback(done, server)
 
 reactor.run()
 ```
@@ -46,4 +47,11 @@ If all you want to do is run a local server, just start the example server:
 
 ```
 twistd -noy server.tac
+```
+
+## Running Tests
+To run tests:
+
+```
+trial kademlia
 ```

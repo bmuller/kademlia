@@ -221,8 +221,6 @@ class Server(object):
     def set(self, key, value):
         """
         Set the given key to the given value in the network.
-
-        TODO - if no one responds, freak out
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
@@ -230,12 +228,23 @@ class Server(object):
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
             ds = [self.protocol.callStore(node, dkey, value) for node in nodes]
-            return defer.gatherResults(ds)
+            return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         spider = SpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.findNodes().addCallback(store)
+
+    def _anyRespondSuccess(self, responses):
+        """
+        Given the result of a DeferredList of calls to peers, ensure that at least
+        one of them was contacted and responded with a Truthy result.
+        """
+        for deferSuccess, result in responses:
+            peerReached, peerResponse = result
+            if deferSuccess and peerReached and peerResponse:
+                return True
+        return False
 
     def save(self, fname):
         data = { 'ksize': self.ksize,
