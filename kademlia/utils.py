@@ -39,3 +39,19 @@ class OrderedSet(list):
         if thing in self:
             self.remove(thing)
         self.append(thing)
+
+
+def sharedPrefix(args):
+    """
+    Find the shared prefix between the strings.
+
+    For instance, sharedPrefix(['blahblah', 'blahwhat']) is
+    'blah'.
+    """
+    i = 0
+    while i < min(map(len, args)):
+        if len(set(map(operator.itemgetter(i), args))) != 1:
+            break
+        i += 1
+    return args[0][:i]
+            

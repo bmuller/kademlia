@@ -59,6 +59,10 @@ class KBucket(object):
             return False
         return True
 
+    def depth(self):
+        sp = sharedPrefix([n.id for n in self.nodes.values()])
+        return len(sp)
+
     def head(self):
         return self.nodes.values()[0]
 
@@ -120,7 +124,6 @@ class RoutingTable(object):
         one, two = self.buckets[index].split()
         self.buckets[index] = one
         self.buckets.insert(index + 1, two)
-        # todo split one/two if needed based on section 4.2
 
     def getLonelyBuckets(self):
         """
@@ -141,7 +144,9 @@ class RoutingTable(object):
         if bucket.addNode(node):
             return
 
-        if bucket.hasInRange(self.node):
+        # Per section 4.2 of paper, split if the bucket has the node in it's range
+        # or if the depth is not congruent to 0 mod 5
+        if bucket.hasInRange(self.node) or bucket.depth() % 5 != 0:
             self.splitBucket(index)
             self.addContact(node)
         else:

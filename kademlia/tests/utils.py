@@ -21,7 +21,7 @@ def mknode(id=None, ip=None, port=None, intid=None):
 
 class FakeProtocol(object):
     def __init__(self, sourceID, ksize=20):
-        self.router = RoutingTable(self, ksize)
+        self.router = RoutingTable(self, ksize, Node(sourceID))
         self.storage = {}
         self.sourceID = sourceID
 
