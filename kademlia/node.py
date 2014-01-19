@@ -29,7 +29,17 @@ class Node:
 
 
 class NodeHeap(object):
-    def __init__(self, maxsize):
+    """
+    A heap of nodes ordered by distance to a given node.
+    """
+    def __init__(self, node, maxsize):
+        """
+        Constructor.
+
+        @param node: The node to measure all distnaces from.
+        @param maxsize: The maximum size that this heap can grow to.
+        """
+        self.node = node
         self.heap = []
         self.contacted = set()
         self.maxsize = maxsize
@@ -51,6 +61,12 @@ class NodeHeap(object):
                 heapq.heappush(nheap, (distance, node))
         self.heap = nheap
 
+    def getNodeById(self, id):
+        for _, node in self.heap:
+            if node.id == id:
+                return node
+        return None
+
     def allBeenContacted(self):
         return len(self.getUncontacted()) == 0
 
@@ -60,8 +76,23 @@ class NodeHeap(object):
     def markContacted(self, node):
         self.contacted.add(node.id)
 
-    def push(self, distance, node):
-        heapq.heappush(self.heap, (distance, node))
+    def leftpop(self):
+        if len(self) > 0:
+            return heapq.heappop(self.heap)[1]
+        return None
+
+    def push(self, nodes):
+        """
+        Push nodes onto heap.
+
+        @param nodes: This can be a single item or a C{list}.
+        """
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        for node in nodes:
+            distance = self.node.distanceTo(node)
+            heapq.heappush(self.heap, (distance, node))
 
     def __len__(self):
         return min(len(self.heap), self.maxsize)
