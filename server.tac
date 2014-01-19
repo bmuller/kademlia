@@ -11,11 +11,11 @@ application = service.Application("kademlia")
 application.setComponent(ILogObserver, log.FileLogObserver(sys.stdout, log.INFO).emit)
 
 if os.path.isfile('cache.pickle'):
-    kserver = Server.load('cache.pickle')
+    kserver = Server.loadState('cache.pickle')
 else:
     kserver = Server()
     kserver.bootstrap([("1.2.3.4", 8468)])
-kserver.saveRegularly('cache.pickle', 10)
+kserver.saveStateRegularly('cache.pickle', 10)
 
 server = internet.UDPServer(8468, kserver.protocol)
 server.setServiceParent(application)

@@ -35,7 +35,7 @@ class Server(object):
         self.log = Logger(system=self)
         storage = ForgetfulStorage()
         self.node = Node(id or digest(random.getrandbits(255)))
-        self.protocol = KademliaProtocol(self.node.id, storage, ksize)
+        self.protocol = KademliaProtocol(self.node, storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
     def listen(self, port):
@@ -123,6 +123,9 @@ class Server(object):
         """
         node = Node(digest(key))
         nearest = self.protocol.router.findNeighbors(node)
+        if len(nearest) == 0:
+            self.log.warning("There are no known neighbors to get key %s" % key)
+            return defer.succeed(None)
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
@@ -140,6 +143,9 @@ class Server(object):
 
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
+        if len(nearest) == 0:
+            self.log.warning("There are no known neighbors to set key %s" % key)
+            return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
 
@@ -154,7 +160,7 @@ class Server(object):
                 return True
         return False
 
-    def save(self, fname):
+    def saveState(self, fname):
         data = { 'ksize': self.ksize,
                  'alpha': self.alpha,
                  'id': self.node.id,
@@ -163,7 +169,7 @@ class Server(object):
             pickle.dump(data, f)
 
     @classmethod
-    def load(self, fname):
+    def loadState(self, fname):
         with open(fname, 'r') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])
@@ -171,12 +177,12 @@ class Server(object):
             s.bootstrap(data['neighbors'])
         return s
 
-    def saveRegularly(self, fname, frequency=600):
+    def saveStateRegularly(self, fname, frequency=600):
         """
         @param fname: File to save retularly to
         @param frequencey: Frequency in seconds that the state
         should be saved.  By default, 10 minutes.
         """
-        loop = LoopingCall(self.save, fname)
+        loop = LoopingCall(self.saveState, fname)
         loop.start(frequency)
         return loop

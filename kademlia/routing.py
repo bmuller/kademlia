@@ -3,11 +3,13 @@ import time
 import operator
 from collections import OrderedDict
 
+from kademlia.utils import OrderedSet
 
 class KBucket(object):
     def __init__(self, rangeLower, rangeUpper, ksize):
         self.range = (rangeLower, rangeUpper)
         self.nodes = OrderedDict()
+        self.replacementNodes = OrderedSet()
         self.touchLastUpdated()
         self.ksize = ksize
 
@@ -27,8 +29,14 @@ class KBucket(object):
         return (one, two)
 
     def removeNode(self, node):
-        if node.id in self.nodes:
-            del self.nodes[node.id]
+        if not node.id in self.nodes:
+            return
+
+        # delete node, and see if we can add a replacement
+        del self.nodes[node.id]
+        if len(self.replacementNodes) > 0:
+            newnode = self.replacementNodes.pop()
+            self.nodes[newnode.id] = newnode
 
     def hasInRange(self, node):
         return self.range[0] <= node.long_id <= self.range[1]
@@ -37,6 +45,9 @@ class KBucket(object):
         """
         Add a C{Node} to the C{KBucket}.  Return True if successful,
         False if the bucket is full.
+
+        If the bucket is full, keep track of node in a replacement list,
+        per section 4.1 of the paper.
         """
         if node.id in self.nodes:
             del self.nodes[node.id]
@@ -44,6 +55,7 @@ class KBucket(object):
         elif len(self) < self.ksize:
             self.nodes[node.id] = node
         else:
+            self.replacementNodes.push(node)
             return False
         return True
 
@@ -90,7 +102,13 @@ class TableTraverser(object):
 
 
 class RoutingTable(object):
-    def __init__(self, protocol, ksize):
+    def __init__(self, protocol, ksize, node):
+        """
+        @param node: The node that represents this server.  It won't
+        be added to the routing table, but will be needed later to
+        determine which buckets to split or not.
+        """
+        self.node = node
         self.protocol = protocol
         self.ksize = ksize
         self.flush()
@@ -123,7 +141,7 @@ class RoutingTable(object):
         if bucket.addNode(node):
             return
 
-        if bucket.hasInRange(node):
+        if bucket.hasInRange(self.node):
             self.splitBucket(index)
             self.addContact(node)
         else:

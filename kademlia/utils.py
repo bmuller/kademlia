@@ -32,3 +32,10 @@ def deferredDict(d):
 
     dl = defer.DeferredList(d.values())
     return dl.addCallback(handle, d.keys())
+
+
+class OrderedSet(list):
+    def push(self, thing):
+        if thing in self:
+            self.remove(thing)
+        self.append(thing)
