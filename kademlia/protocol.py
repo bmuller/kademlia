@@ -9,7 +9,7 @@ from kademlia.log import Logger
 class KademliaProtocol(RPCProtocol):
     def __init__(self, sourceNode, storage, ksize):
         RPCProtocol.__init__(self)
-        self.router = RoutingTable(self, sourceNode, ksize)
+        self.router = RoutingTable(self, ksize, sourceNode)
         self.storage = storage
         self.sourceID = sourceNode.id
         self.log = Logger(system=self)
