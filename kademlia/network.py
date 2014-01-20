@@ -5,7 +5,7 @@ import random
 import pickle
 
 from twisted.internet.task import LoopingCall
-from twisted.internet import defer, reactor
+from twisted.internet import defer, reactor, task
 
 from kademlia.log import Logger
 from kademlia.protocol import KademliaProtocol
@@ -90,8 +90,7 @@ class Server(object):
         """
         # if the transport hasn't been initialized yet, wait a second
         if self.protocol.transport is None:
-            reactor.callLater(1, self.bootstrap, addrs)
-            return
+            return task.deferLater(reactor, 1, self.bootstrap, addrs)
 
         def initTable(results):
             nodes = []

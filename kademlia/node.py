@@ -76,7 +76,7 @@ class NodeHeap(object):
     def markContacted(self, node):
         self.contacted.add(node.id)
 
-    def leftpop(self):
+    def popleft(self):
         if len(self) > 0:
             return heapq.heappop(self.heap)[1]
         return None

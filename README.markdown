@@ -44,11 +44,13 @@ server.bootstrap([('127.0.0.1', 1234)]).addCallback(done, server)
 reactor.run()
 ```
 
+Check out the examples folder for other examples.
+
 ## Stand-alone Server
 If all you want to do is run a local server, just start the example server:
 
 ```
-twistd -noy server.tac
+twistd -noy examples/server.tac
 ```
 
 ## Running Tests
