@@ -33,9 +33,9 @@ class Server(object):
         self.ksize = ksize
         self.alpha = alpha
         self.log = Logger(system=self)
-        storage = ForgetfulStorage()
+        self.storage = ForgetfulStorage()
         self.node = Node(id or digest(random.getrandbits(255)))
-        self.protocol = KademliaProtocol(self.node, storage, ksize)
+        self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
     def listen(self, port):
@@ -58,7 +58,15 @@ class Server(object):
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
             spider = NodeSpiderCrawl(self.protocol, node, nearest)
             ds.append(spider.find())
-        return defer.gatherResults(ds)
+
+        def republishKeys(_):
+            ds = []
+            # Republish keys older than one hour
+            for key, value in self.storage.iteritemsOlderThan(3600):
+                ds.append(self.set(key, value))
+            return defer.gatherResults(ds)
+
+        return defer.gatherResults(ds).addCallback(republishKeys)
 
     def bootstrappableNeighbors(self):
         """
