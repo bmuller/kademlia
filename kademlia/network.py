@@ -168,6 +168,10 @@ class Server(object):
         return False
 
     def saveState(self, fname):
+        """
+        Save the state of this node (the alpha/ksize/id/immediate neighbors)
+        to a cache file with the given fname.
+        """
         data = { 'ksize': self.ksize,
                  'alpha': self.alpha,
                  'id': self.node.id,
@@ -177,6 +181,10 @@ class Server(object):
 
     @classmethod
     def loadState(self, fname):
+        """
+        Load the state of this node (the alpha/ksize/id/immediate neighbors)
+        from a cache file with the given fname.
+        """        
         with open(fname, 'r') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])
@@ -186,6 +194,9 @@ class Server(object):
 
     def saveStateRegularly(self, fname, frequency=600):
         """
+        Save the state of node with a given regularity to the given
+        filename.
+        
         @param fname: File to save retularly to
         @param frequencey: Frequency in seconds that the state
         should be saved.  By default, 10 minutes.

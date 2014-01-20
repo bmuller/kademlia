@@ -13,6 +13,9 @@ class Node:
         return self.ip == node.ip and self.port == node.port
 
     def distanceTo(self, node):
+        """
+        Get the distance between this node and another.
+        """
         return self.long_id ^ node.long_id
 
     def __iter__(self):
