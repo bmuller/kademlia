@@ -3,7 +3,6 @@ import hashlib
 
 from twisted.trial import unittest
 
-from kademlia.utils import digest
 from kademlia.node import Node, NodeHeap
 from kademlia.tests.utils import mknode
 

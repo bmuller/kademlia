@@ -2,6 +2,8 @@
 General catchall for functions that don't make sense as methods.
 """
 import hashlib
+import operator
+
 from twisted.internet import defer
 
 
@@ -54,4 +56,3 @@ def sharedPrefix(args):
             break
         i += 1
     return args[0][:i]
-            

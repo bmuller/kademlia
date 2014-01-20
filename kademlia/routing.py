@@ -3,7 +3,8 @@ import time
 import operator
 from collections import OrderedDict
 
-from kademlia.utils import OrderedSet
+from kademlia.utils import OrderedSet, sharedPrefix
+
 
 class KBucket(object):
     def __init__(self, rangeLower, rangeUpper, ksize):
@@ -40,6 +41,9 @@ class KBucket(object):
 
     def hasInRange(self, node):
         return self.range[0] <= node.long_id <= self.range[1]
+
+    def isNewNode(self, node):
+        return node.id not in self.nodes
 
     def addNode(self, node):
         """
@@ -135,6 +139,10 @@ class RoutingTable(object):
     def removeContact(self, node):
         index = self.getBucketFor(node)
         self.buckets[index].removeNode(node)
+
+    def isNewNode(self, node):
+        index = self.getBucketFor(node)
+        return self.buckets[index].isNewNode(node)
 
     def addContact(self, node):
         index = self.getBucketFor(node)
