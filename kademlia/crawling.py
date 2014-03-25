@@ -85,7 +85,7 @@ class ValueSpiderCrawl(SpiderCrawl):
             elif response.hasValue():
                 foundValues.append(response.getValue())
             else:
-                peer = self.nearest.getById(peerid)
+                peer = self.nearest.getNodeById(peerid)
                 self.nearestWithoutValue.push(peer)
                 self.nearest.push(response.getNodeList())
         self.nearest.remove(toremove)
