@@ -5,8 +5,50 @@ from itertools import takewhile
 import operator
 from collections import OrderedDict
 
+from zope.interface import implements
+from zope.interface import Interface
+
+
+class IStorage(Interface):
+    """
+    Local storage for this node.
+    """
+
+    def __setitem__(key, value):
+        """
+        Set a key to the given value.
+        """
+
+    def __getitem__(key):
+        """
+        Get the given key.  If item doesn't exist, raises C{KeyError}
+        """
+
+    def get(key, default=None):
+        """
+        Get given key.  If not found, return default.
+        """
+
+    def __iter__():
+        """
+        Get the iterator for this storage, should yield tuple of (key, (birth, value))
+        where birth is the float timestamp when the value was set.
+        """
+
+    def iteritemsOlderThan(secondsOld):
+        """
+        Return the an iterator over (key, value) tuples for items older than the given secondsOld.
+        """
+
+    def iteritems():
+        """
+        Get the iterator for this storage, should yield tuple of (key, value)
+        """
+
 
 class ForgetfulStorage(object):
+    implements(IStorage)
+
     def __init__(self, ttl=604800):
         """
         By default, max age is a week.
