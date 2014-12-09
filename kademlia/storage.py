@@ -29,12 +29,6 @@ class IStorage(Interface):
         Get given key.  If not found, return default.
         """
 
-    def __iter__():
-        """
-        Get the iterator for this storage, should yield tuple of (key, (birth, value))
-        where birth is the float timestamp when the value was set.
-        """
-
     def iteritemsOlderThan(secondsOld):
         """
         Return the an iterator over (key, value) tuples for items older than the given secondsOld.
