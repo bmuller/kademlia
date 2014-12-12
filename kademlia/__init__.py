@@ -3,5 +3,5 @@ Kademlia is a Python implementation of the Kademlia protocol for U{Twisted <http
 
 @author: Brian Muller U{bamuller@gmail.com}
 """
-version_info = (0, 1)
+version_info = (0, 2)
 version = '.'.join(map(str, version_info))
