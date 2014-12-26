@@ -12,7 +12,7 @@ pip install kademlia
 ```
 
 ## Usage
-*This assumes you have a working familiarity with Twisted.*
+*This assumes you have a working familiarity with [Twisted](https://twistedmatrix.com).*
 
 Assuming you want to connect to an existing network (run the standalone server example below if you don't have a network):
 
