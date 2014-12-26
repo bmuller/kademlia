@@ -176,6 +176,9 @@ class Server(object):
                  'alpha': self.alpha,
                  'id': self.node.id,
                  'neighbors': self.bootstrappableNeighbors() }
+        if len(data['neighbors']) == 0:
+            self.log.warning("No known neighbors, so not writing to cache.")
+            return
         with open(fname, 'w') as f:
             pickle.dump(data, f)
 
