@@ -187,7 +187,7 @@ class Server(object):
         """
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
-        """        
+        """
         with open(fname, 'r') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])
@@ -199,7 +199,7 @@ class Server(object):
         """
         Save the state of node with a given regularity to the given
         filename.
-        
+
         @param fname: File to save retularly to
         @param frequencey: Frequency in seconds that the state
         should be saved.  By default, 10 minutes.

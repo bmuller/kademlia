@@ -1,7 +1,6 @@
 from twisted.trial import unittest
 
-from kademlia.routing import KBucket, RoutingTable
-from kademlia.protocol import KademliaProtocol
+from kademlia.routing import KBucket
 from kademlia.tests.utils import mknode, FakeProtocol
 
 

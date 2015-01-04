@@ -30,7 +30,7 @@ class KBucket(object):
         return (one, two)
 
     def removeNode(self, node):
-        if not node.id in self.nodes:
+        if node.id not in self.nodes:
             return
 
         # delete node, and see if we can add a replacement

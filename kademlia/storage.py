@@ -58,7 +58,7 @@ class ForgetfulStorage(object):
 
     def cull(self):
         for k, v in self.iteritemsOlderThan(self.ttl):
-            self.data.popitem(first=True)
+            self.data.popitem(last=False)
 
     def get(self, key, default=None):
         self.cull()

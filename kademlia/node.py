@@ -60,7 +60,7 @@ class NodeHeap(object):
             return
         nheap = []
         for distance, node in self.heap:
-            if not node.id in peerIDs:
+            if node.id not in peerIDs:
                 heapq.heappush(nheap, (distance, node))
         self.heap = nheap
 
@@ -105,4 +105,4 @@ class NodeHeap(object):
         return iter(map(itemgetter(1), nodes))
 
     def getUncontacted(self):
-        return [n for n in self if not n.id in self.contacted]
+        return [n for n in self if n.id not in self.contacted]
