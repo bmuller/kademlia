@@ -26,9 +26,9 @@ class Server(object):
         """
         Create a server instance.  This will start listening on the given port.
 
-        @param port: UDP port to listen on
-        @param k: The k parameter from the paper
-        @param alpha: The alpha parameter from the paper
+        Args:
+            ksize (int): The k parameter from the paper
+            alpha: The alpha parameter from the paper
         """
         self.ksize = ksize
         self.alpha = alpha
