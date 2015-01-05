@@ -28,7 +28,9 @@ class Server(object):
 
         Args:
             ksize (int): The k parameter from the paper
-            alpha: The alpha parameter from the paper
+            alpha (int): The alpha parameter from the paper
+            id: The id for this node on the network.
+            storage: An instance that implements :interface:`~kademlia.storage.IStorage`
         """
         self.ksize = ksize
         self.alpha = alpha
@@ -42,8 +44,9 @@ class Server(object):
         """
         Start listening on the given port.
 
-        This is the same as calling:
-        C{reactor.listenUDP(port, server.protocol)}
+        This is the same as calling::
+
+            reactor.listenUDP(port, server.protocol)
         """
         return reactor.listenUDP(port, self.protocol)
 
@@ -70,7 +73,7 @@ class Server(object):
 
     def bootstrappableNeighbors(self):
         """
-        Get a C{list} of (ip, port) C{tuple}s suitable for use as an argument
+        Get a :class:`list` of (ip, port) :class:`tuple` pairs suitable for use as an argument
         to the bootstrap method.
 
         The server should have been bootstrapped
@@ -85,8 +88,9 @@ class Server(object):
         """
         Bootstrap the server by connecting to other known nodes in the network.
 
-        @param addrs: A C{list} of (ip, port) C{tuple}s.  Note that only IP addresses
-        are acceptable - hostnames will cause an error.
+        Args:
+            addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP addresses
+                   are acceptable - hostnames will cause an error.
         """
         # if the transport hasn't been initialized yet, wait a second
         if self.protocol.transport is None:
@@ -109,8 +113,8 @@ class Server(object):
         """
         Get the internet visible IP's of this node as other nodes see it.
 
-        @return: An C{list} of IP's.  If no one can be contacted, then the
-        C{list} will be empty.
+        Returns:
+            A `list` of IP's.  If no one can be contacted, then the `list` will be empty.
         """
         def handle(results):
             ips = [ result[1][0] for result in results if result[0] ]
@@ -126,7 +130,8 @@ class Server(object):
         """
         Get a key if the network has it.
 
-        @return: C{None} if not found, the value otherwise.
+        Returns:
+            :class:`None` if not found, the value otherwise.
         """
         node = Node(digest(key))
         nearest = self.protocol.router.findNeighbors(node)
@@ -200,9 +205,10 @@ class Server(object):
         Save the state of node with a given regularity to the given
         filename.
 
-        @param fname: File to save retularly to
-        @param frequencey: Frequency in seconds that the state
-        should be saved.  By default, 10 minutes.
+        Args:
+            fname: File name to save retularly to
+            frequencey: Frequency in seconds that the state should be saved.
+                        By default, 10 minutes.
         """
         loop = LoopingCall(self.saveState, fname)
         loop.start(frequency)

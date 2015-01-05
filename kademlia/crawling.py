@@ -13,11 +13,12 @@ class SpiderCrawl(object):
         """
         Create a new C{SpiderCrawl}er.
 
-        @param protocol: a C{KademliaProtocol} instance.
-        @param node: A C{Node} representing the key we're looking for
-        @param peers: A list of C{Node}s that provide the entry point for the network
-        @param ksize: The value for k based on the paper
-        @param alpha: The value for alpha based on the paper
+        Args:
+            protocol: A :class:`~kademlia.protocol.KademliaProtocol` instance.
+            node: A :class:`~kademlia.node.Node` representing the key we're looking for
+            peers: A list of :class:`~kademlia.node.Node` instances that provide the entry point for the network
+            ksize: The value for k based on the paper
+            alpha: The value for alpha based on the paper
         """
         self.protocol = protocol
         self.ksize = ksize
@@ -34,7 +35,8 @@ class SpiderCrawl(object):
         """
         Get either a value or list of nodes.
 
-        @param rpcmethod: The protocol's C{callfindValue} or C{callFindNode}.
+        Args:
+            rpcmethod: The protocol's callfindValue or callFindNode.
 
         The process:
           1. calls find_* to current ALPHA nearest not already queried nodes,
@@ -74,7 +76,7 @@ class ValueSpiderCrawl(SpiderCrawl):
 
     def _nodesFound(self, responses):
         """
-        Handle the result of an iteration in C{_find}.
+        Handle the result of an iteration in _find.
         """
         toremove = []
         foundValues = []
@@ -126,7 +128,7 @@ class NodeSpiderCrawl(SpiderCrawl):
 
     def _nodesFound(self, responses):
         """
-        Handle the result of an iteration in C{_find}.
+        Handle the result of an iteration in _find.
         """
         toremove = []
         for peerid, response in responses.items():
@@ -145,9 +147,12 @@ class NodeSpiderCrawl(SpiderCrawl):
 class RPCFindResponse(object):
     def __init__(self, response):
         """
-        @param response: This will be a tuple of (<response received>, <value>)
-        where <value> will be a list of tuples if not found or
-        a dictionary of {'value': v} where v is the value desired
+        A wrapper for the result of a RPC find.
+
+        Args:
+            response: This will be a tuple of (<response received>, <value>)
+                      where <value> will be a list of tuples if not found or
+                      a dictionary of {'value': v} where v is the value desired
         """
         self.response = response
 

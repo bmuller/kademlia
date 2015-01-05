@@ -1,15 +1,7 @@
 kademlia package
 ================
 
-Subpackages
------------
-
-.. toctree::
-
-    kademlia.tests
-
-Submodules
-----------
+The best place to start is the examples folder before diving into the API.
 
 kademlia.crawling module
 ------------------------
@@ -66,20 +58,12 @@ kademlia.storage module
     :members:
     :undoc-members:
     :show-inheritance:
+    :special-members: __getitem__, __setitem__
 
 kademlia.utils module
 ---------------------
 
 .. automodule:: kademlia.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: kademlia
     :members:
     :undoc-members:
     :show-inheritance:
