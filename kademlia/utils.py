@@ -15,13 +15,15 @@ def digest(s):
 
 def deferredDict(d):
     """
-    Just like a C{defer.DeferredList} but instead accepts and returns a C{dict}.
+    Just like a :class:`defer.DeferredList` but instead accepts and returns a :class:`dict`.
 
-    @param d: A C{dict} whose values are all C{Deferred} objects.
+    Args:
+        d: A :class:`dict` whose values are all :class:`defer.Deferred` objects.
 
-    @return: A C{DeferredList} whose callback will be given a dictionary whose
-    keys are the same as the parameter C{d}'s and whose values are the results
-    of each individual deferred call.
+    Returns:
+        :class:`defer.DeferredList` whose callback will be given a dictionary whose
+        keys are the same as the parameter :obj:`d` and whose values are the results
+        of each individual deferred call.
     """
     if len(d) == 0:
         return defer.succeed({})
@@ -37,7 +39,15 @@ def deferredDict(d):
 
 
 class OrderedSet(list):
+    """
+    Acts like a list in all ways, except in the behavior of the :meth:`push` method.
+    """
+
     def push(self, thing):
+        """
+        1. If the item exists in the list, it's removed
+        2. The item is pushed to the end of the list
+        """
         if thing in self:
             self.remove(thing)
         self.append(thing)
@@ -47,8 +57,11 @@ def sharedPrefix(args):
     """
     Find the shared prefix between the strings.
 
-    For instance, sharedPrefix(['blahblah', 'blahwhat']) is
-    'blah'.
+    For instance:
+
+        sharedPrefix(['blahblah', 'blahwhat'])
+
+    returns 'blah'.
     """
     i = 0
     while i < min(map(len, args)):

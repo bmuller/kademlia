@@ -20,6 +20,7 @@ This library aims to be as close to a reference implementation of the `Kademlia 
    :titlesonly:
 
    intro
+   querying
    source/modules
    
 	      

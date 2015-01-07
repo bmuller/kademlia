@@ -152,7 +152,7 @@ class RoutingTable(object):
         if bucket.addNode(node):
             return
 
-        # Per section 4.2 of paper, split if the bucket has the node in it's range
+        # Per section 4.2 of paper, split if the bucket has the node in its range
         # or if the depth is not congruent to 0 mod 5
         if bucket.hasInRange(self.node) or bucket.depth() % 5 != 0:
             self.splitBucket(index)
