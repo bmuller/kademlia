@@ -94,8 +94,9 @@ class NodeHeap(object):
             nodes = [nodes]
 
         for node in nodes:
-            distance = self.node.distanceTo(node)
-            heapq.heappush(self.heap, (distance, node))
+	    if node.id not in [n.id for n in self]:
+                distance = self.node.distanceTo(node)
+                heapq.heappush(self.heap, (distance, node))
 
     def __len__(self):
         return min(len(self.heap), self.maxsize)
