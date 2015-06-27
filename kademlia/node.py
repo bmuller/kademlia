@@ -94,7 +94,7 @@ class NodeHeap(object):
             nodes = [nodes]
 
         for node in nodes:
-	    if node not in self:
+            if node not in self:
                 distance = self.node.distanceTo(node)
                 heapq.heappush(self.heap, (distance, node))
 
@@ -109,7 +109,7 @@ class NodeHeap(object):
         for distance, n in self.heap:
             if node.id == n.id:
                 return True
-        return False	
+        return False
 
     def getUncontacted(self):
         return [n for n in self if n.id not in self.contacted]
