@@ -133,7 +133,11 @@ class Server(object):
         Returns:
             :class:`None` if not found, the value otherwise.
         """
-        node = Node(digest(key))
+        dkey = digest(key)
+        # if this node has it, return it
+        if self.storage.get(dkey) is not None:
+            return defer.succeed(self.storage.get(dkey))
+        node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to get key %s" % key)
@@ -147,13 +151,16 @@ class Server(object):
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
+        node = Node(dkey)
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(node, dkey, value) for node in nodes]
+            # if this node is close too, then store here as well
+            if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
+                self.storage[dkey] = value
+            ds = [self.protocol.callStore(n, dkey, value) for n in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
-        node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to set key %s" % key)
