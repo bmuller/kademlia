@@ -32,11 +32,13 @@ class KademliaProtocol(RPCProtocol):
 
     def rpc_ping(self, sender, nodeid):
         source = Node(nodeid, sender[0], sender[1])
+        self.maybeTransferKeyValues(source)
         self.router.addContact(source)
         return self.sourceNode.id
 
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
+        self.maybeTransferKeyValues(source)
         self.router.addContact(source)
         self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
@@ -45,12 +47,14 @@ class KademliaProtocol(RPCProtocol):
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
         source = Node(nodeid, sender[0], sender[1])
+        self.maybeTransferKeyValues(source)
         self.router.addContact(source)
         node = Node(key)
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
         source = Node(nodeid, sender[0], sender[1])
+        self.maybeTransferKeyValues(source)
         self.router.addContact(source)
         value = self.storage.get(key, None)
         if value is None:
@@ -100,6 +104,10 @@ class KademliaProtocol(RPCProtocol):
             if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
                 ds.append(self.callStore(node, key, value))
         return defer.gatherResults(ds)
+
+    def maybeTransferKeyValues(self, node):
+        if self.router.isNewNode(node):
+            self.transferKeyValues(node)
 
     def handleCallResponse(self, result, node):
         """
