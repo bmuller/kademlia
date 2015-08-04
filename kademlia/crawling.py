@@ -114,7 +114,7 @@ class ValueSpiderCrawl(SpiderCrawl):
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
         if peerToSaveTo is not None:
-            d = self.protocol.callStore(peerToSaveTo, self.node.id, value)
+            d = self.protocol.callStore(peerToSaveTo, self.node.id[0], value)
             return d.addCallback(lambda _: value)
         return value
 
@@ -174,4 +174,12 @@ class RPCFindResponse(object):
         be set.
         """
         nodelist = self.response[1] or []
-        return [Node(*nodeple) for nodeple in nodelist]
+        out = []
+        for nodeple in nodelist:
+            try:
+                node = HostNode(*nodeple)
+            except NodeValidationError as e:
+                #  TODO log
+                continue
+            out.append(node)
+        return out

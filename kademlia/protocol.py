@@ -4,7 +4,9 @@ from twisted.internet import defer
 
 from rpcudp.protocol import RPCProtocol
 
-from kademlia.node import Node
+from kademlia.node import (
+    HostNode, ValueNode, NodeVerificationError, format_nodeid
+)
 from kademlia.routing import RoutingTable
 from kademlia.log import Logger
 from kademlia.utils import digest
@@ -30,28 +32,36 @@ class KademliaProtocol(RPCProtocol):
     def rpc_stun(self, sender):
         return sender
 
+    def _addContact(self, sender, nodeid):
+        try:
+            source = HostNode(tuple(nodeid), sender[0], sender[1])
+            self.router.addContact(source)
+            return source
+        except NodeVerificationError as e:
+            self.log.warning(e)
+            return None
+
     def rpc_ping(self, sender, nodeid):
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self._addContact(sender, nodeid)
         return self.sourceNode.id
 
     def rpc_store(self, sender, nodeid, key, value):
-        source = Node(nodeid, sender[0], sender[1])
+        source = self._addContact(sender, nodeid)
+        if not source:
+            return True
         self.router.addContact(source)
         self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
-        self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
-        node = Node(key)
+        self.log.info("finding neighbors of {} in local table".format(format_nodeid(nodeid)))
+        source = self._addContact(sender, nodeid)
+        node = ValueNode((key, None))
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self._addContact(sender, nodeid)
         value = self.storage.get(key, None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
@@ -59,12 +69,12 @@ class KademliaProtocol(RPCProtocol):
 
     def callFindNode(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.find_node(address, self.sourceNode.id, nodeToFind.id)
+        d = self.find_node(address, self.sourceNode.id, nodeToFind.id[0])
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
     def callFindValue(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.find_value(address, self.sourceNode.id, nodeToFind.id)
+        d = self.find_value(address, self.sourceNode.id, nodeToFind.id[0])
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
     def callPing(self, nodeToAsk):
@@ -92,7 +102,7 @@ class KademliaProtocol(RPCProtocol):
         """
         ds = []
         for key, value in self.storage.iteritems():
-            keynode = Node(digest(key))
+            keynode = ValueNode((digest(key), None))
             neighbors = self.router.findNeighbors(keynode)
             if len(neighbors) > 0:
                 newNodeClose = node.distanceTo(keynode) < neighbors[-1].distanceTo(keynode)
