@@ -14,6 +14,8 @@ Assuming you want to connect to an existing network (run the `Stand-alone Server
 
 Check out the examples folder for other examples.
 
+.. note ::
+    You must have at least two nodes running to store values.  If a node tries to store a value and there are no other nodes to provide redundancy, then it is an exception state.
 
 Stand-alone Server
 ==================
