@@ -37,10 +37,7 @@ class Server(object):
         self.log = Logger(system=self)
         self.storage = storage or ForgetfulStorage()
         if id:
-            try:
-                self.node = HostNode(id)
-            except NodeVerificationError as e:
-                self.log.warning(e)
+            self.node = HostNode(id)
         else:
             id_src = os.urandom(20)
             id_digest = digest(id_src)
