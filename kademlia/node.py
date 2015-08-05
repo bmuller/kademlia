@@ -1,13 +1,27 @@
 from operator import itemgetter
 import heapq
+from kademlia.utils import digest
+
+
+def format_nodeid(id):
+    return (
+        long(id[0].encode('hex'), 16),
+        long(id[1].encode('hex'), 16) if id[1] is not None else None
+    )
+
+
+class NodeValidationError(RuntimeError):
+    pass
 
 
 class Node:
-    def __init__(self, id, ip=None, port=None):
+    def __init__(self, id, ip=None, port=None, derived=False):
+        if not derived:
+            raise AssertionError('Node base class instantiated.')
         self.id = id
         self.ip = ip
         self.port = port
-        self.long_id = long(id.encode('hex'), 16)
+        self.long_id = long(id[0].encode('hex'), 16)
 
     def sameHomeAs(self, node):
         return self.ip == node.ip and self.port == node.port
@@ -29,6 +43,20 @@ class Node:
 
     def __str__(self):
         return "%s:%s" % (self.ip, str(self.port))
+
+
+class UnvalidatedNode(Node):
+    def __init__(self, id, ip=None, port=None):
+        Node.__init__(self, id, ip, port, True)
+
+
+class ValidatedNode(Node):
+    def __init__(self, id, ip=None, port=None):
+        if id[0] != digest(id[1]):
+            raise NodeValidationError(
+                "Encountered host node with invalid id: {} at {}:{}".format(format_nodeid(id), ip, port) if ip and port else
+                "Local host node id is invalid: {}".format(format_nodeid(id)))
+        Node.__init__(self, id, ip, port, True)
 
 
 class NodeHeap(object):

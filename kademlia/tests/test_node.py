@@ -3,24 +3,36 @@ import hashlib
 
 from twisted.trial import unittest
 
-from kademlia.node import Node, NodeHeap
+from kademlia.node import UnvalidatedNode, ValidatedNode, NodeHeap, NodeValidationError
 from kademlia.tests.utils import mknode
 
 
 class NodeTest(unittest.TestCase):
     def test_longID(self):
-        rid = hashlib.sha1(str(random.getrandbits(255))).digest()
-        n = Node(rid)
-        self.assertEqual(n.long_id, long(rid.encode('hex'), 16))
+        rid = mknode().id
+        n = UnvalidatedNode(rid)
+        self.assertEqual(n.long_id, long(rid[0].encode('hex'), 16))
 
     def test_distanceCalculation(self):
-        ridone = hashlib.sha1(str(random.getrandbits(255)))
-        ridtwo = hashlib.sha1(str(random.getrandbits(255)))
+        ridone = mknode().id
+        ridtwo = mknode().id
 
-        shouldbe = long(ridone.hexdigest(), 16) ^ long(ridtwo.hexdigest(), 16)
-        none = Node(ridone.digest())
-        ntwo = Node(ridtwo.digest())
+        shouldbe = long(ridone[0].encode('hex'), 16) ^ long(ridtwo[0].encode('hex'), 16)
+        none = UnvalidatedNode(ridone)
+        ntwo = UnvalidatedNode(ridtwo)
         self.assertEqual(none.distanceTo(ntwo), shouldbe)
+
+    def test_idValidation(self):
+        none = mknode(intpreid=7)
+
+        # valid
+        ValidatedNode(none.id)
+
+        # invalid raises
+        temp = list(none.id[0])
+        temp[0] = 'a'
+        none.id = (''.join(temp), none.id[1])
+        self.assertRaises(NodeValidationError, lambda: ValidatedNode(none.id))
 
 
 class NodeHeapTest(unittest.TestCase):
