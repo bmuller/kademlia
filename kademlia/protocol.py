@@ -5,7 +5,7 @@ from twisted.internet import defer
 from rpcudp.protocol import RPCProtocol
 
 from kademlia.node import (
-    HostNode, ValueNode, NodeVerificationError, format_nodeid
+    ValidatedNode, UnvalidatedNode, NodeValidationError, format_nodeid
 )
 from kademlia.routing import RoutingTable
 from kademlia.log import Logger
@@ -34,10 +34,10 @@ class KademliaProtocol(RPCProtocol):
 
     def _addContact(self, sender, nodeid):
         try:
-            source = HostNode(tuple(nodeid), sender[0], sender[1])
+            source = ValidatedNode(tuple(nodeid), sender[0], sender[1])
             self.router.addContact(source)
             return source
-        except NodeVerificationError as e:
+        except NodeValidationError as e:
             self.log.warning(e)
             return None
 
@@ -57,7 +57,7 @@ class KademliaProtocol(RPCProtocol):
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of {} in local table".format(format_nodeid(nodeid)))
         source = self._addContact(sender, nodeid)
-        node = ValueNode((key, None))
+        node = UnvalidatedNode((key, None))
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
@@ -102,7 +102,7 @@ class KademliaProtocol(RPCProtocol):
         """
         ds = []
         for key, value in self.storage.iteritems():
-            keynode = ValueNode((digest(key), None))
+            keynode = UnvalidatedNode((digest(key), None))
             neighbors = self.router.findNeighbors(keynode)
             if len(neighbors) > 0:
                 newNodeClose = node.distanceTo(keynode) < neighbors[-1].distanceTo(keynode)

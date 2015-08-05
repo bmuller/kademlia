@@ -11,7 +11,7 @@ from kademlia.log import Logger
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import deferredDict, digest
 from kademlia.storage import ForgetfulStorage
-from kademlia.node import HostNode, ValueNode, NodeVerificationError
+from kademlia.node import ValidatedNode, UnvalidatedNode, NodeValidationError
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
 
@@ -37,11 +37,11 @@ class Server(object):
         self.log = Logger(system=self)
         self.storage = storage or ForgetfulStorage()
         if id:
-            self.node = HostNode(id)
+            self.node = ValidatedNode(id)
         else:
             id_src = os.urandom(20)
             id_digest = digest(id_src)
-            self.node = HostNode((id_digest, id_src))
+            self.node = ValidatedNode((id_digest, id_src))
         self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
@@ -62,7 +62,7 @@ class Server(object):
         """
         ds = []
         for id in self.protocol.getRefreshIDs():
-            node = ValueNode((id, None))
+            node = UnvalidatedNode((id, None))
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
             spider = NodeSpiderCrawl(self.protocol, node, nearest)
             ds.append(spider.find())
@@ -106,8 +106,8 @@ class Server(object):
             for addr, result in results.items():
                 if result[0]:
                     try:
-                        node = HostNode(tuple(result[1]), addr[0], addr[1])
-                    except NodeVerificationError as e:
+                        node = ValidatedNode(tuple(result[1]), addr[0], addr[1])
+                    except NodeValidationError as e:
                         self.log.warning(e)
                         continue
                     nodes.append(node)
@@ -147,7 +147,7 @@ class Server(object):
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
             return defer.succeed(self.storage.get(dkey))
-        node = ValueNode((dkey, None))
+        node = UnvalidatedNode((dkey, None))
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to get key %s" % key)
@@ -161,7 +161,7 @@ class Server(object):
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
-        node = ValueNode((dkey, None))
+        node = UnvalidatedNode((dkey, None))
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))

@@ -177,7 +177,7 @@ class RPCFindResponse(object):
         out = []
         for nodeple in nodelist:
             try:
-                node = HostNode(*nodeple)
+                node = ValidatedNode(*nodeple)
             except NodeValidationError as e:
                 #  TODO log
                 continue

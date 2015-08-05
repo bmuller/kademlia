@@ -10,7 +10,7 @@ def format_nodeid(id):
     )
 
 
-class NodeVerificationError(RuntimeError):
+class NodeValidationError(RuntimeError):
     pass
 
 
@@ -45,15 +45,15 @@ class Node:
         return "%s:%s" % (self.ip, str(self.port))
 
 
-class ValueNode(Node):
+class UnvalidatedNode(Node):
     def __init__(self, id, ip=None, port=None):
         Node.__init__(self, id, ip, port, True)
 
 
-class HostNode(Node):
+class ValidatedNode(Node):
     def __init__(self, id, ip=None, port=None):
         if id[0] != digest(id[1]):
-            raise NodeVerificationError(
+            raise NodeValidationError(
                 "Encountered host node with invalid id: {} at {}:{}".format(format_nodeid(id), ip, port) if ip and port else
                 "Local host node id is invalid: {}".format(format_nodeid(id)))
         Node.__init__(self, id, ip, port, True)
