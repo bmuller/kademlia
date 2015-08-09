@@ -32,12 +32,12 @@ class KademliaProtocol(RPCProtocol):
 
     def rpc_ping(self, sender, nodeid):
         source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self.welcomeIfNewNode(source)
         return self.sourceNode.id
 
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self.welcomeIfNewNode(source)
         self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
         return True
@@ -45,13 +45,13 @@ class KademliaProtocol(RPCProtocol):
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
         source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self.welcomeIfNewNode(source)
         node = Node(key)
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
         source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self.welcomeIfNewNode(source)
         value = self.storage.get(key, None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
@@ -77,9 +77,10 @@ class KademliaProtocol(RPCProtocol):
         d = self.store(address, self.sourceNode.id, key, value)
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
-    def transferKeyValues(self, node):
+    def welcomeIfNewNode(self, node):
         """
-        Given a new node, send it all the keys/values it should be storing.
+        Given a new node, send it all the keys/values it should be storing,
+        then add it to the routing table.
 
         @param node: A new node that just joined (or that we just found out
         about).
@@ -90,16 +91,18 @@ class KademliaProtocol(RPCProtocol):
         is closer than the closest in that list, then store the key/value
         on the new node (per section 2.5 of the paper)
         """
-        ds = []
-        for key, value in self.storage.iteritems():
-            keynode = Node(digest(key))
-            neighbors = self.router.findNeighbors(keynode)
-            if len(neighbors) > 0:
-                newNodeClose = node.distanceTo(keynode) < neighbors[-1].distanceTo(keynode)
-                thisNodeClosest = self.sourceNode.distanceTo(keynode) < neighbors[0].distanceTo(keynode)
-            if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
-                ds.append(self.callStore(node, key, value))
-        return defer.gatherResults(ds)
+        if self.router.isNewNode(node):
+            ds = []
+            for key, value in self.storage.iteritems():
+                keynode = Node(digest(key))
+                neighbors = self.router.findNeighbors(keynode)
+                if len(neighbors) > 0:
+                    newNodeClose = node.distanceTo(keynode) < neighbors[-1].distanceTo(keynode)
+                    thisNodeClosest = self.sourceNode.distanceTo(keynode) < neighbors[0].distanceTo(keynode)
+                if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
+                    ds.append(self.callStore(node, key, value))
+            self.router.addContact(node)
+            return defer.gatherResults(ds)
 
     def handleCallResponse(self, result, node):
         """
@@ -108,9 +111,7 @@ class KademliaProtocol(RPCProtocol):
         """
         if result[0]:
             self.log.info("got response from %s, adding to router" % node)
-            self.router.addContact(node)
-            if self.router.isNewNode(node):
-                self.transferKeyValues(node)
+            self.welcomeIfNewNode(node)
         else:
             self.log.debug("no response from %s, removing from router" % node)
             self.router.removeContact(node)
