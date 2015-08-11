@@ -41,14 +41,7 @@ class Server(object):
             self.node = OwnNode.restore(seed)
         else:
             self.node = OwnNode.new()
-        self.log.debug(
-            'Own node: {}'.format(
-                json.dumps({
-                    'id': self.node.id.encode('hex'),
-                    'preid': self.node.preid.encode('hex'),
-                }, indent=4),
-            )
-        )
+        self.log.debug('Own node: {}'.format(self.node))
         self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
@@ -112,7 +105,7 @@ class Server(object):
             nodes = []
             for addr, result in results.items():
                 if result[0]:
-                    nodes.append(UnvalidatedNode(result[1], addr[0], addr[1]))
+                    nodes.append(UnvalidatedNode(tuple(result[1]), addr[0], addr[1]))
             spider = NodeSpiderCrawl(self.protocol, self.node, nodes, self.ksize, self.alpha)
             return spider.find()
 

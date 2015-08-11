@@ -4,7 +4,9 @@ from twisted.internet import defer
 
 from rpcudp.protocol import RPCProtocol
 
-from kademlia.node import ValidatedNode, NodeValidationError
+from kademlia.node import (
+    UnvalidatedNode, ValidatedNode, NodeValidationError, format_nodeid
+)
 from kademlia.routing import RoutingTable
 from kademlia.log import Logger
 from kademlia.utils import digest
@@ -30,14 +32,18 @@ class KademliaProtocol(RPCProtocol):
     def _addContact(self, nodeid, sender, challenge, response):
         node = ValidatedNode(tuple(nodeid), sender[0], sender[1])
         def finish(response, challenge):
+            if not response[0]:
+                self.log.debug('No response challenging {}'.format(node))
+                return
             try:
-                node.verify(challenge, response):
+                node.validate(challenge, response[1])
             except NodeValidationError as e:
                 self.log.info(e)
                 return False
+            self.log.debug('Verified new contact {}, adding'.format(node))
             self.router.addContact(node)
             return True
-        if self.router.popContact(node):
+        if self.router.isNewNode(node):
             self.router.addContact(node)
             return defer.succeed(True)
         else:
@@ -67,10 +73,10 @@ class KademliaProtocol(RPCProtocol):
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
-        self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
-        source = UnvalidatedNode(nodeid, sender[0], sender[1])
+        self.log.info("finding neighbors of {} in local table".format(format_nodeid(nodeid)))
+        source = UnvalidatedNode(tuple(nodeid), sender[0], sender[1])
         self._addContact(nodeid, sender, None, None)
-        node = UnvalidatedNode((key, None))
+        node = UnvalidatedNode(tuple(key))
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):

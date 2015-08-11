@@ -10,7 +10,7 @@ from kademlia.utils import digest
 
 
 def format_nodeid(nodeid):
-    return '{:.6}~, {:.6}~'.format(nodeid[0].encode('hex'), nodeid[1].encode('hex'))
+    return '({:.6}~, {:.6}~)'.format(nodeid[0].encode('hex'), nodeid[1].encode('hex') if nodeid[1] else 'None')
 
 
 class NodeValidationError(RuntimeError):
@@ -44,10 +44,10 @@ class Node:
         return iter([self.id, self.ip, self.port])
 
     def __repr__(self):
-        return repr([format_nodeid(self.id), self.ip, self.port])
+        return repr([self.id, self.ip, self.port])
 
     def __str__(self):
-        return "%s:%s" % (self.ip, str(self.port))
+        return '{} @ {}:{}'.format(format_nodeid(self.id), self.ip, self.port)
 
 
 class UnvalidatedNode(Node):
