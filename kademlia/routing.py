@@ -31,13 +31,14 @@ class KBucket(object):
 
     def removeNode(self, node):
         if node.id not in self.nodes:
-            return
+            return False
 
         # delete node, and see if we can add a replacement
         del self.nodes[node.id]
         if len(self.replacementNodes) > 0:
             newnode = self.replacementNodes.pop()
             self.nodes[newnode.id] = newnode
+        return True
 
     def hasInRange(self, node):
         return self.range[0] <= node.long_id <= self.range[1]
@@ -138,7 +139,7 @@ class RoutingTable(object):
 
     def removeContact(self, node):
         index = self.getBucketFor(node)
-        self.buckets[index].removeNode(node)
+        return self.buckets[index].removeNode(node)
 
     def isNewNode(self, node):
         index = self.getBucketFor(node)
