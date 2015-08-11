@@ -1,8 +1,9 @@
 """
 Package for interacting on the network at a high level.
 """
-import random
+import os
 import pickle
+import json
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import defer, reactor, task
@@ -11,7 +12,7 @@ from kademlia.log import Logger
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import deferredDict, digest
 from kademlia.storage import ForgetfulStorage
-from kademlia.node import Node
+from kademlia.node import ValidatedNode, UnvalidatedNode, OwnNode, NodeValidationError
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
 
@@ -22,7 +23,7 @@ class Server(object):
     to start listening as an active node on the network.
     """
 
-    def __init__(self, ksize=20, alpha=3, id=None, storage=None):
+    def __init__(self, ksize=20, alpha=3, seed=None, storage=None):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -36,7 +37,18 @@ class Server(object):
         self.alpha = alpha
         self.log = Logger(system=self)
         self.storage = storage or ForgetfulStorage()
-        self.node = Node(id or digest(random.getrandbits(255)))
+        if seed:
+            self.node = OwnNode.restore(seed)
+        else:
+            self.node = OwnNode.new()
+        self.log.debug(
+            'Own node: {}'.format(
+                json.dumps({
+                    'id': self.node.id.encode('hex'),
+                    'preid': self.node.preid.encode('hex'),
+                }, indent=4),
+            )
+        )
         self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
@@ -57,7 +69,7 @@ class Server(object):
         """
         ds = []
         for id in self.protocol.getRefreshIDs():
-            node = Node(id)
+            node = UnvalidatedNode(id)
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
             spider = NodeSpiderCrawl(self.protocol, node, nearest)
             ds.append(spider.find())
@@ -100,7 +112,7 @@ class Server(object):
             nodes = []
             for addr, result in results.items():
                 if result[0]:
-                    nodes.append(Node(result[1], addr[0], addr[1]))
+                    nodes.append(UnvalidatedNode(result[1], addr[0], addr[1]))
             spider = NodeSpiderCrawl(self.protocol, self.node, nodes, self.ksize, self.alpha)
             return spider.find()
 
@@ -137,7 +149,7 @@ class Server(object):
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
             return defer.succeed(self.storage.get(dkey))
-        node = Node(dkey)
+        node = UnvalidatedNode((dkey, None))
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to get key %s" % key)
@@ -151,7 +163,7 @@ class Server(object):
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
-        node = Node(dkey)
+        node = UnvalidatedNode((dkey, None))
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
@@ -186,7 +198,7 @@ class Server(object):
         """
         data = { 'ksize': self.ksize,
                  'alpha': self.alpha,
-                 'id': self.node.id,
+                 'seed': self.node.seed,
                  'neighbors': self.bootstrappableNeighbors() }
         if len(data['neighbors']) == 0:
             self.log.warning("No known neighbors, so not writing to cache.")
@@ -202,7 +214,7 @@ class Server(object):
         """
         with open(fname, 'r') as f:
             data = pickle.load(f)
-        s = Server(data['ksize'], data['alpha'], data['id'])
+        s = Server(data['ksize'], data['alpha'], data['seed'])
         if len(data['neighbors']) > 0:
             s.bootstrap(data['neighbors'])
         return s

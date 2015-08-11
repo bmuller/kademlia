@@ -1,7 +1,8 @@
 from twisted.trial import unittest
 
+from kademlia.node import OwnNode
 from kademlia.routing import KBucket
-from kademlia.tests.utils import mknode, FakeProtocol
+from kademlia.tests.utils import mknode, mkValidatedNode, FakeProtocol
 
 
 class KBucketTest(unittest.TestCase):
@@ -41,11 +42,12 @@ class KBucketTest(unittest.TestCase):
 
 class RoutingTableTest(unittest.TestCase):
     def setUp(self):
-        self.id = mknode().id
-        self.protocol = FakeProtocol(self.id)
+        node = OwnNode.new()
+        self.id = node.id
+        self.protocol = FakeProtocol(node)
         self.router = self.protocol.router
 
     def test_addContact(self):
-        self.router.addContact(mknode())
+        self.router.addContact(mkValidatedNode())
         self.assertTrue(len(self.router.buckets), 1)
         self.assertTrue(len(self.router.buckets[0].nodes), 1)

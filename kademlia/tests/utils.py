@@ -1,29 +1,39 @@
 """
 Utility functions for tests.
 """
-import random
+import os
 import hashlib
 from struct import pack
 
-from kademlia.node import Node
+from kademlia.node import UnvalidatedNode, ValidatedNode, OwnNode
 from kademlia.routing import RoutingTable
 
 
-def mknode(id=None, ip=None, port=None, intid=None):
+def mknode(id=None, ip=None, port=None, intid=None, intseed=None):
     """
     Make a node.  Created a random id if not specified.
     """
     if intid is not None:
-        id = pack('>l', intid)
-    id = id or hashlib.sha1(str(random.getrandbits(255))).digest()
-    return Node(id, ip, port)
+        id = (pack('>l', intid), None)
+    if not id and intseed is not None:
+        id = OwnNode.restore(pack('>llllllll', 0, 0, 0, 0, 0, 0, 0, intseed)).id
+    if not id:
+        id = OwnNode.new().id
+    return UnvalidatedNode(id, ip, port)
+
+
+def mkValidatedNode():
+    source = OwnNode.restore(pack('>llllllll', 0, 0, 0, 0, 0, 0, 0, 99))
+    challenge = pack('>l', 311)
+    response = source.completeChallenge(challenge)
+    return ValidatedNode(source.id, challenge, response)
 
 
 class FakeProtocol(object):
-    def __init__(self, sourceID, ksize=20):
-        self.router = RoutingTable(self, ksize, Node(sourceID))
+    def __init__(self, sourceNode, ksize=20):
+        self.router = RoutingTable(self, ksize, sourceNode)
         self.storage = {}
-        self.sourceID = sourceID
+        self.sourceID = sourceNode.id
 
     def getRefreshIDs(self):
         """
@@ -35,25 +45,25 @@ class FakeProtocol(object):
         return ids
 
     def rpc_ping(self, sender, nodeid):
-        source = Node(nodeid, sender[0], sender[1])
+        source = ValidatedNode(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         return self.sourceID
 
     def rpc_store(self, sender, nodeid, key, value):
-        source = Node(nodeid, sender[0], sender[1])
+        source = ValidatedNode(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         self.log.debug("got a store request from %s, storing value" % str(sender))
         self.storage[key] = value
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
-        source = Node(nodeid, sender[0], sender[1])
+        source = ValidatedNode(nodeid, sender[0], sender[1])
         self.router.addContact(source)
-        node = Node(key)
+        node = UnvalidatedNode((key, None))
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
-        source = Node(nodeid, sender[0], sender[1])
+        source = ValidatedNode(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         value = self.storage.get(key, None)
         if value is None:

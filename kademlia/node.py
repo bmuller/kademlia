@@ -1,13 +1,32 @@
 from operator import itemgetter
 import heapq
+import json
+
+import nacl.signing
+import nacl.utils
+from nacl.encoding import RawEncoder as rawenc
+
+from kademlia.utils import digest
+
+
+def format_nodeid(nodeid):
+    return '{:.6}~, {:.6}~'.format(nodeid[0].encode('hex'), nodeid[1].encode('hex'))
+
+
+class NodeValidationError(RuntimeError):
+    pass
 
 
 class Node:
-    def __init__(self, id, ip=None, port=None):
+    def __init__(self, id, ip=None, port=None, derived=False):
+        if not derived:
+            raise AssertionError('Node base class instantiated.')
+        if not isinstance(id, tuple):
+            raise AssertionError('Node id must be a tuple.')
         self.id = id
         self.ip = ip
         self.port = port
-        self.long_id = long(id.encode('hex'), 16)
+        self.long_id = long(id[0].encode('hex'), 16)
 
     def sameHomeAs(self, node):
         return self.ip == node.ip and self.port == node.port
@@ -25,10 +44,69 @@ class Node:
         return iter([self.id, self.ip, self.port])
 
     def __repr__(self):
-        return repr([self.long_id, self.ip, self.port])
+        return repr([format_nodeid(self.id), self.ip, self.port])
 
     def __str__(self):
         return "%s:%s" % (self.ip, str(self.port))
+
+
+class UnvalidatedNode(Node):
+    def __init__(self, id, ip=None, port=None):
+        Node.__init__(self, id, ip, port, True)
+
+
+class ValidatedNode(Node):
+    def __init__(self, id, ip=None, port=None):
+        Node.__init__(self, id, ip, port, True)
+
+    def validate(self, challenge, response):
+        verify_key = nacl.signing.VerifyKey(self.id[1], encoder=rawenc)
+        def fail():
+            raise NodeValidationError(
+                "Encountered host node ({}) with invalid id: {}".format(
+                    self,
+                    json.dumps({
+                        'id': self.id[0].encode('hex'),
+                        'preid': self.id[1].encode('hex'),
+                        'challenge': challenge.encode('hex'),
+                        'response': response.encode('hex'),
+                    }, indent=4),
+                ))
+        try:
+            verify_key.verify(challenge, response, encoder=rawenc)
+        except nacl.exceptions.BadSignatureError:
+            fail()
+        if digest(self.id[1]) != self.id[0]:
+            fail()
+
+
+class OwnNode(Node):
+    seed = None
+    key = None
+
+    @staticmethod
+    def _finish_init(cls, seed):
+        key = nacl.signing.SigningKey(seed, encoder=rawenc)
+        verify_key = key.verify_key.encode(encoder=rawenc)
+        self = cls((digest(verify_key), verify_key), None, None, True)
+        self.seed = seed
+        self.key = key
+        return self
+
+    @classmethod
+    def new(cls):
+        seed = nacl.utils.random()
+        return OwnNode._finish_init(cls, seed)
+
+    @classmethod
+    def restore(cls, seed):
+        return OwnNode._finish_init(cls, seed)
+
+    def completeChallenge(self, challenge):
+        return self.key.sign(challenge).signature
+
+    def generateChallenge(self):
+        return nacl.utils.random()
 
 
 class NodeHeap(object):

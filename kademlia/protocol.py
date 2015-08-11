@@ -4,7 +4,7 @@ from twisted.internet import defer
 
 from rpcudp.protocol import RPCProtocol
 
-from kademlia.node import Node
+from kademlia.node import ValidatedNode, NodeValidationError
 from kademlia.routing import RoutingTable
 from kademlia.log import Logger
 from kademlia.utils import digest
@@ -26,36 +26,62 @@ class KademliaProtocol(RPCProtocol):
         for bucket in self.router.getLonelyBuckets():
             ids.append(random.randint(*bucket.range))
         return ids
+    
+    def _addContact(self, nodeid, sender, challenge, response):
+        node = ValidatedNode(tuple(nodeid), sender[0], sender[1])
+        def finish(response, challenge):
+            try:
+                node.verify(challenge, response):
+            except NodeValidationError as e:
+                self.log.info(e)
+                return False
+            self.router.addContact(node)
+            return True
+        if self.router.popContact(node):
+            self.router.addContact(node)
+            return defer.succeed(True)
+        else:
+            # TODO keep a lookup of pending challenges
+            if challenge is None:
+                challenge = self.sourceNode.generateChallenge()
+                d = self.challenge(sender, challenge)
+                d.addCallback(finish, challenge)
+                return d
+            else:
+                return defer.succeed(finish(challenge, response))
 
     def rpc_stun(self, sender):
         return sender
 
     def rpc_ping(self, sender, nodeid):
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self._addContact(nodeid, sender, None, None)
         return self.sourceNode.id
 
     def rpc_store(self, sender, nodeid, key, value):
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
-        self.log.debug("got a store request from %s, storing value" % str(sender))
-        self.storage[key] = value
+        d = self._addContact(nodeid, sender, None, None)
+        def finish(result):
+            if result:
+                self.log.debug("got a store request from %s, storing value" % str(sender))
+                self.storage[key] = value
+        d.addCallback(finish)
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
-        node = Node(key)
+        source = UnvalidatedNode(nodeid, sender[0], sender[1])
+        self._addContact(nodeid, sender, None, None)
+        node = UnvalidatedNode((key, None))
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
+        self._addContact(nodeid, sender, None, None)
         value = self.storage.get(key, None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
         return { 'value': value }
+
+    def rpc_challenge(self, sender, challenge):
+        return self.sourceNode.completeChallenge(challenge)
 
     def callFindNode(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
@@ -92,7 +118,7 @@ class KademliaProtocol(RPCProtocol):
         """
         ds = []
         for key, value in self.storage.iteritems():
-            keynode = Node(digest(key))
+            keynode = UnvalidatedNode((digest(key), None))
             neighbors = self.router.findNeighbors(keynode)
             if len(neighbors) > 0:
                 newNodeClose = node.distanceTo(keynode) < neighbors[-1].distanceTo(keynode)
@@ -108,9 +134,13 @@ class KademliaProtocol(RPCProtocol):
         """
         if result[0]:
             self.log.info("got response from %s, adding to router" % node)
-            self.router.addContact(node)
-            if self.router.isNewNode(node):
-                self.transferKeyValues(node)
+            d = self._addContact(node.id, (node.ip, node.port), None, None)
+            def transfer(result):
+                if not result:
+                    return
+                if self.router.isNewNode(node):
+                    self.transferKeyValues(node)
+            d.addCallback(transfer)
         else:
             self.log.debug("no response from %s, removing from router" % node)
             self.router.removeContact(node)
