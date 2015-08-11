@@ -11,6 +11,6 @@ setup(
     license="MIT",
     url="http://github.com/bmuller/kademlia",
     packages=find_packages(),
-    requires=["twisted", "rpcudp"],
-    install_requires=['twisted>=14.0', "rpcudp>=1.0"]
+    requires=["twisted", "rpcudp", "PyNaCl"],
+    install_requires=['twisted>=14.0', "rpcudp>=1.0", "PyNaCl>=0.3.0"]
 )
