@@ -29,7 +29,7 @@ class KademliaProtocol(RPCProtocol):
             ids.append(random.randint(*bucket.range))
         return ids
     
-    def _addContact(self, nodeid, sender, challenge, response):
+    def _addContact(self, nodeid, sender):
         node = ValidatedNode(tuple(nodeid), sender[0], sender[1])
         def finish(response, challenge):
             if not response[0]:
@@ -48,23 +48,21 @@ class KademliaProtocol(RPCProtocol):
             return defer.succeed(True)
         else:
             # TODO keep a lookup of pending challenges
-            if challenge is None:
-                challenge = self.sourceNode.generateChallenge()
-                d = self.challenge(sender, challenge)
-                d.addCallback(finish, challenge)
-                return d
-            else:
-                return defer.succeed(finish(challenge, response))
+            challenge = self.sourceNode.generateChallenge()
+            self.log.debug('Sending challenge {:.6}~ to {}'.format(challenge.encode('hex'), sender))
+            d = self.challenge(sender, challenge)
+            d.addCallback(finish, challenge)
+            return d
 
     def rpc_stun(self, sender):
         return sender
 
     def rpc_ping(self, sender, nodeid):
-        self._addContact(nodeid, sender, None, None)
+        self._addContact(nodeid, sender)
         return self.sourceNode.id
 
     def rpc_store(self, sender, nodeid, key, value):
-        d = self._addContact(nodeid, sender, None, None)
+        d = self._addContact(nodeid, sender)
         def finish(result):
             if result:
                 self.log.debug("got a store request from %s, storing value" % str(sender))
@@ -75,18 +73,19 @@ class KademliaProtocol(RPCProtocol):
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of {} in local table".format(format_nodeid(nodeid)))
         source = UnvalidatedNode(tuple(nodeid), sender[0], sender[1])
-        self._addContact(nodeid, sender, None, None)
+        self._addContact(nodeid, sender)
         node = UnvalidatedNode(tuple(key))
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
-        self._addContact(nodeid, sender, None, None)
+        self._addContact(nodeid, sender)
         value = self.storage.get(key, None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
         return { 'value': value }
 
     def rpc_challenge(self, sender, challenge):
+        self.log.debug('Responding to challenge {:.6}~ from {}'.format(challenge.encode('hex'), sender))
         return self.sourceNode.completeChallenge(challenge)
 
     def callFindNode(self, nodeToAsk, nodeToFind):
@@ -140,7 +139,7 @@ class KademliaProtocol(RPCProtocol):
         """
         if result[0]:
             self.log.info("got response from %s, adding to router" % node)
-            d = self._addContact(node.id, (node.ip, node.port), None, None)
+            d = self._addContact(node.id, (node.ip, node.port))
             def transfer(result):
                 if not result:
                     return
