@@ -2,7 +2,7 @@ from collections import Counter
 
 from kademlia.log import Logger
 from kademlia.utils import deferredDict
-from kademlia.node import Node, NodeHeap
+from kademlia.node import UnvalidatedNode, NodeHeap
 
 
 class SpiderCrawl(object):
@@ -174,4 +174,4 @@ class RPCFindResponse(object):
         be set.
         """
         nodelist = self.response[1] or []
-        return [Node(*nodeple) for nodeple in nodelist]
+        return [UnvalidatedNode(tuple(nodeple[0]), nodeple[1], nodeple[2]) for nodeple in nodelist]
