@@ -44,6 +44,7 @@ class KademliaProtocol(RPCProtocol):
             self.welcomeNewNode(node)
             return True
         if not self.router.isNewNode(node):
+            self.log.debug('Freshening {}'.format(node))
             self.router.addContact(node)
             return defer.succeed(True)
         else:
@@ -141,13 +142,7 @@ class KademliaProtocol(RPCProtocol):
         """
         if result[0]:
             self.log.info("got response from %s, adding to router" % node)
-            d = self._addContact(node.id, (node.ip, node.port))
-            def transfer(result):
-                if not result:
-                    return
-                if self.router.isNewNode(node):
-                    self.transferKeyValues(node)
-            d.addCallback(transfer)
+            self._addContact(node.id, (node.ip, node.port))
         else:
             self.log.debug("no response from %s, removing from router" % node)
             self.router.removeContact(node)
