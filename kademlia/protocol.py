@@ -41,9 +41,9 @@ class KademliaProtocol(RPCProtocol):
                 self.log.info(e)
                 return False
             self.log.debug('Verified new contact {}, adding'.format(node))
-            self.router.addContact(node)
+            self.welcomeNewNode(node)
             return True
-        if self.router.isNewNode(node):
+        if not self.router.isNewNode(node):
             self.router.addContact(node)
             return defer.succeed(True)
         else:
@@ -108,9 +108,10 @@ class KademliaProtocol(RPCProtocol):
         d = self.store(address, self.sourceNode.id, key, value)
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
-    def transferKeyValues(self, node):
+    def welcomeNewNode(self, node):
         """
-        Given a new node, send it all the keys/values it should be storing.
+        Given a new node, send it all the keys/values it should be storing,
+        then add it to the routing table.
 
         @param node: A new node that just joined (or that we just found out
         about).
@@ -130,6 +131,7 @@ class KademliaProtocol(RPCProtocol):
                 thisNodeClosest = self.sourceNode.distanceTo(keynode) < neighbors[0].distanceTo(keynode)
             if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
                 ds.append(self.callStore(node, key, value))
+        self.router.addContact(node)
         return defer.gatherResults(ds)
 
     def handleCallResponse(self, result, node):
