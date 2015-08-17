@@ -80,7 +80,7 @@ class KademliaProtocol(RPCProtocol):
 
     def rpc_find_value(self, sender, nodeid, key):
         self._addContact(nodeid, sender)
-        value = self.storage.get(key, None)
+        value = self.storage.get(key[0], None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
         return { 'value': value }
