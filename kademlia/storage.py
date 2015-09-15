@@ -26,7 +26,7 @@ class IStorage(Interface):
 
     def get(key, default=None):
         """
-        Get given key.  If not found, return default.
+        Get given key.  returns tupple (exists, value) so if not found exists is False
         """
 
     def iteritemsOlderThan(secondsOld):
@@ -63,8 +63,8 @@ class ForgetfulStorage(object):
     def get(self, key, default=None):
         self.cull()
         if key in self.data:
-            return self[key]
-        return default
+            return False, self[key]
+        return False, default
 
     def __getitem__(self, key):
         self.cull()

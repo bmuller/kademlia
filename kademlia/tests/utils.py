@@ -55,8 +55,8 @@ class FakeProtocol(object):
     def rpc_find_value(self, sender, nodeid, key):
         source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
-        value = self.storage.get(key, None)
-        if value is None:
+        exists, value = self.storage.get(key, None)
+        if not exists:
             return self.rpc_find_node(sender, nodeid, key)
         return { 'value': value }
 

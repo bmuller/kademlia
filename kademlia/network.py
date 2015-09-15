@@ -135,8 +135,9 @@ class Server(object):
         """
         dkey = digest(key)
         # if this node has it, return it
-        if self.storage.get(dkey) is not None:
-            return defer.succeed(self.storage.get(dkey))
+        exists, value = self.storage.get(dkey):
+        if exists:
+            return defer.succeed(value)
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
