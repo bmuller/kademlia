@@ -6,7 +6,7 @@ import sys
 log.startLogging(sys.stdout)
 
 def done(result):
-    print "Key result:", result
+    print("Key result:", result)
     reactor.stop()
 
 def setDone(result, server):
