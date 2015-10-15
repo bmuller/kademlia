@@ -9,6 +9,7 @@ setup(
     author="Brian Muller",
     author_email="bamuller@gmail.com",
     license="MIT",
+    test_suite="kademlia.tests",
     url="http://github.com/bmuller/kademlia",
     packages=find_packages(),
     requires=["twisted", "rpcudp"],
