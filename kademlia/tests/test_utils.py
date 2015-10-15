@@ -7,10 +7,10 @@ from kademlia.utils import digest, sharedPrefix, OrderedSet
 
 class UtilsTest(unittest.TestCase):
     def test_digest(self):
-        d = hashlib.sha1('1').digest()
+        d = hashlib.sha1(b'1').digest()
         self.assertEqual(d, digest(1))
 
-        d = hashlib.sha1('another').digest()
+        d = hashlib.sha1(b'another').digest()
         self.assertEqual(d, digest('another'))
 
     def test_sharedPrefix(self):

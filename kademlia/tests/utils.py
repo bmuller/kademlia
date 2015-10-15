@@ -1,6 +1,7 @@
 """
 Utility functions for tests.
 """
+import os
 import random
 import hashlib
 from struct import pack
@@ -15,7 +16,7 @@ def mknode(id=None, ip=None, port=None, intid=None):
     """
     if intid is not None:
         id = pack('>l', intid)
-    id = id or hashlib.sha1(str(random.getrandbits(255))).digest()
+    id = id or hashlib.sha1(os.urandom(255)).digest()
     return Node(id, ip, port)
 
 

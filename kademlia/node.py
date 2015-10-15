@@ -1,5 +1,7 @@
 from operator import itemgetter
 import heapq
+import binascii
+from past.builtins import long
 
 
 class Node:
@@ -7,7 +9,7 @@ class Node:
         self.id = id
         self.ip = ip
         self.port = port
-        self.long_id = long(id.encode('hex'), 16)
+        self.long_id = long(binascii.hexlify(id), 16)
 
     def sameHomeAs(self, node):
         return self.ip == node.ip and self.port == node.port

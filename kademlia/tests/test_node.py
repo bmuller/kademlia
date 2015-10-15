@@ -1,5 +1,7 @@
-import random
+import os
 import hashlib
+import binascii
+from past.builtins import long
 
 from twisted.trial import unittest
 
@@ -9,13 +11,13 @@ from kademlia.tests.utils import mknode
 
 class NodeTest(unittest.TestCase):
     def test_longID(self):
-        rid = hashlib.sha1(str(random.getrandbits(255))).digest()
+        rid = hashlib.sha1(os.urandom(255)).digest()
         n = Node(rid)
-        self.assertEqual(n.long_id, long(rid.encode('hex'), 16))
+        self.assertEqual(n.long_id, long(binascii.hexlify(rid), 16))
 
     def test_distanceCalculation(self):
-        ridone = hashlib.sha1(str(random.getrandbits(255)))
-        ridtwo = hashlib.sha1(str(random.getrandbits(255)))
+        ridone = hashlib.sha1(os.urandom(255))
+        ridtwo = hashlib.sha1(os.urandom(255))
 
         shouldbe = long(ridone.hexdigest(), 16) ^ long(ridtwo.hexdigest(), 16)
         none = Node(ridone.digest())
