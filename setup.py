@@ -13,5 +13,5 @@ setup(
     url="http://github.com/bmuller/kademlia",
     packages=find_packages(),
     requires=["twisted", "rpcudp"],
-    install_requires=['twisted>=14.0', "rpcudp>=1.0", "future>=0.15.2"]
+    install_requires=open("requirements.txt").readlines(),
 )
