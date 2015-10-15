@@ -1,6 +1,9 @@
 """
 Package for interacting on the network at a high level.
 """
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import random
 import pickle
 

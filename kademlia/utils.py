@@ -1,6 +1,9 @@
 """
 General catchall for functions that don't make sense as methods.
 """
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import hashlib
 import operator
 

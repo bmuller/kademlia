@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
