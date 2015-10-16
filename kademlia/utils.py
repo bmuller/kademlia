@@ -13,8 +13,9 @@ from twisted.internet import defer
 def digest(s):
     if not isinstance(s, str):
         s = str(s)
-    b = s.encode('utf-8')
-    return hashlib.sha1(b).digest()
+    if not isinstance(s, bytes):
+        s = s.encode('utf-8')  # py3
+    return hashlib.sha1(s).digest()
 
 
 def deferredDict(d):

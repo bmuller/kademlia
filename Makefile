@@ -71,7 +71,7 @@ install: test
 
 
 example: install
-	$(PY) examples/server.tac
+	$(PY) examples/query.py 127.0.0.1 8469 test
 
 
 publish: test

@@ -2,6 +2,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import random
+import binascii
+from past.builtins import long
 
 from twisted.internet import defer
 
@@ -46,7 +48,7 @@ class KademliaProtocol(RPCProtocol):
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
-        self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
+        self.log.info("finding neighbors of %i in local table" % long(binascii.hexlify(nodeid), 16))
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
         node = Node(key)

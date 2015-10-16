@@ -98,7 +98,7 @@ class TableTraverser(object):
         Pop an item from the left subtree, then right, then left, etc.
         """
         if len(self.currentNodes) > 0:
-            return self.currentNodes.pop()
+            return list(self.currentNodes).pop()
 
         if self.left and len(self.leftBuckets) > 0:
             self.currentNodes = self.leftBuckets.pop().getNodes()
