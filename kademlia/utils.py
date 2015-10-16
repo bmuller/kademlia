@@ -39,7 +39,7 @@ def deferredDict(d):
         return rvalue
 
     dl = defer.DeferredList(d.values())
-    return dl.addCallback(handle, d.keys())
+    return dl.addCallback(handle, list(d.keys()))
 
 
 class OrderedSet(list):

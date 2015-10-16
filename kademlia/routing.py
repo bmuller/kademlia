@@ -181,4 +181,4 @@ class RoutingTable(object):
             if len(nodes) == k:
                 break
 
-        return map(operator.itemgetter(1), heapq.nsmallest(k, nodes))
+        return list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes)))

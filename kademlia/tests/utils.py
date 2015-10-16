@@ -51,7 +51,7 @@ class FakeProtocol(object):
         source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         node = Node(key)
-        return map(tuple, self.router.findNeighbors(node, exclude=source))
+        return list(map(tuple, self.router.findNeighbors(node, exclude=source)))
 
     def rpc_find_value(self, sender, nodeid, key):
         source = Node(nodeid, sender[0], sender[1])

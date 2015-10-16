@@ -157,7 +157,7 @@ class Server(object):
         node = Node(dkey)
 
         def store(nodes):
-            self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
+            self.log.info("setting '%s' on %s" % (key, list(map(str, nodes))))
             # if this node is close too, then store here as well
             if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
                 self.storage[dkey] = value
