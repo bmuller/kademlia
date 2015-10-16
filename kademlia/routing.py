@@ -21,7 +21,7 @@ class KBucket(object):
         return self.nodes.values()
 
     def split(self):
-        midpoint = self.range[1] - ((self.range[1] - self.range[0]) / 2)
+        midpoint = (self.range[0] + self.range[1]) / 2
         one = KBucket(self.range[0], midpoint, self.ksize)
         two = KBucket(midpoint + 1, self.range[1], self.ksize)
         for node in self.nodes.values():
