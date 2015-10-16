@@ -4,6 +4,7 @@ Utility functions for tests.
 import os
 import random
 import hashlib
+import binascii
 from struct import pack
 
 from kademlia.node import Node
@@ -16,7 +17,7 @@ def mknode(id=None, ip=None, port=None, intid=None):
     """
     if intid is not None:
         id = pack('>l', intid)
-    id = id or hashlib.sha1(os.urandom(255)).digest()
+    id = id or hashlib.sha1(os.urandom(32)).digest()
     return Node(id, ip, port)
 
 
@@ -47,7 +48,7 @@ class FakeProtocol(object):
         self.storage[key] = value
 
     def rpc_find_node(self, sender, nodeid, key):
-        self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
+        self.log.info("finding neighbors of %i in local table" % long(binascii.hexlify(nodeid), 16))
         source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         node = Node(key)
