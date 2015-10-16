@@ -25,7 +25,7 @@ class KBucket(object):
         one = KBucket(self.range[0], midpoint, self.ksize)
         two = KBucket(midpoint + 1, self.range[1], self.ksize)
         for node in self.nodes.values():
-            bucket = one if node.id <= midpoint else two
+            bucket = one if node.long_id <= midpoint else two
             bucket.nodes[node.id] = node
         return (one, two)
 
