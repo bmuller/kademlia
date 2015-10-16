@@ -1,6 +1,16 @@
 language: python
 python:
   - "2.7"
+  - "3.3"
+  - "3.4"
   - "pypy"
-install: pip install . --use-mirrors
-script: trial kademlia
+
+install:
+  - pip install -r requirements.txt
+  - pip install -r test_requirements.txt
+
+script:
+  - coverage run --source="kademlia" setup.py test
+
+after_success:
+  - coveralls
