@@ -70,7 +70,7 @@ install: test
 	$(PY) setup.py install
 
 
-example: setup
+server: setup
 	$(PY) examples/server.py
 
 
