@@ -196,10 +196,7 @@ class Server(object):
             self.log.warning("No known neighbors, so not writing to cache.")
             return
         with open(fname, 'wb') as f:
-            if six.PY2:
-                pickle.dump(data, f)
-            else:  # PY3
-                pickle.dump(data, f, encoding='latin1')
+            pickle.dump(data, f)
 
     @classmethod
     def loadState(self, fname):
@@ -212,7 +209,8 @@ class Server(object):
                 data = pickle.load(f)
             else:  # PY3
                 data = pickle.load(f, encoding='latin1')
-                data['id'] = six.b(data['id'])
+                if not isinstance(data['id'], bytes): # first py3 unpickle
+                    data['id'] = six.b(data['id'])  # fix bytes
         s = Server(data['ksize'], data['alpha'], data['id'])
         if len(data['neighbors']) > 0:
             s.bootstrap(data['neighbors'])

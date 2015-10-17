@@ -70,8 +70,8 @@ install: test
 	$(PY) setup.py install
 
 
-example: install
-	$(PY) examples/query.py 127.0.0.1 8469 test
+example: setup
+	$(PY) examples/server.py
 
 
 publish: test

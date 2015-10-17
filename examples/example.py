@@ -1,10 +1,11 @@
 from __future__ import print_function
-from __future__ import unicode_literals
 
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
-import sys
 
 log.startLogging(sys.stdout)
 

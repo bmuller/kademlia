@@ -85,7 +85,7 @@ class TableTraverser(object):
     def __init__(self, table, startNode):
         index = table.getBucketFor(startNode)
         table.buckets[index].touchLastUpdated()
-        self.currentNodes = table.buckets[index].getNodes()
+        self.currentNodes = list(table.buckets[index].getNodes())
         self.leftBuckets = table.buckets[:index]
         self.rightBuckets = table.buckets[(index + 1):]
         self.left = True
@@ -101,12 +101,12 @@ class TableTraverser(object):
             return self.currentNodes.pop()
 
         if self.left and len(self.leftBuckets) > 0:
-            self.currentNodes = self.leftBuckets.pop().getNodes()
+            self.currentNodes = list(self.leftBuckets.pop().getNodes())
             self.left = False
             return next(self)
 
         if len(self.rightBuckets) > 0:
-            self.currentNodes = self.rightBuckets.pop().getNodes()
+            self.currentNodes = list(self.rightBuckets.pop().getNodes())
             self.left = True
             return next(self)
 
