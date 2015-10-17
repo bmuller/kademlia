@@ -4,6 +4,7 @@ Package for interacting on the network at a high level.
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import six
 import random
 import pickle
 
@@ -194,8 +195,11 @@ class Server(object):
         if len(data['neighbors']) == 0:
             self.log.warning("No known neighbors, so not writing to cache.")
             return
-        with open(fname, 'w') as f:
-            pickle.dump(data, f)
+        with open(fname, 'wb') as f:
+            if six.PY2:
+                pickle.dump(data, f)
+            else:  # PY3
+                pickle.dump(data, f, encoding='latin1')
 
     @classmethod
     def loadState(self, fname):
@@ -203,8 +207,12 @@ class Server(object):
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
         """
-        with open(fname, 'r') as f:
-            data = pickle.load(f)
+        with open(fname, 'rb') as f:
+            if six.PY2:
+                data = pickle.load(f)
+            else:  # PY3
+                data = pickle.load(f, encoding='latin1')
+                data['id'] = six.b(data['id'])
         s = Server(data['ksize'], data['alpha'], data['id'])
         if len(data['neighbors']) > 0:
             s.bootstrap(data['neighbors'])
