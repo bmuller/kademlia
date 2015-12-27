@@ -9,7 +9,7 @@ from twisted.internet import defer, reactor, task
 
 from kademlia.log import Logger
 from kademlia.protocol import KademliaProtocol
-from kademlia.utils import deferredDict, digest
+from kademlia.utils import deferredDict, digest, safe_log_var
 from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
@@ -149,12 +149,14 @@ class Server(object):
         """
         Set the given key to the given value in the network.
         """
-        self.log.debug("setting '%s' = '%s' on network" % (key, value))
+        safe_key = safe_log_var(key)
+        safe_value = safe_log_var(value)
+        self.log.debug("setting '%s' = '%s' on network" % (safe_key, safe_value))
         dkey = digest(key)
         node = Node(dkey)
 
         def store(nodes):
-            self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
+            self.log.info("setting '%s' on %s" % (safe_key, map(str, nodes)))
             # if this node is close too, then store here as well
             if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
                 self.storage[dkey] = value
