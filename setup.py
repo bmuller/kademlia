@@ -5,7 +5,8 @@ from kademlia import version
 setup(
     name="kademlia",
     version=version,
-    description="Kademlia is a distributed hash table for decentralized peer-to-peer computer networks.",
+    description=("Kademlia is a distributed hash table for "
+                 "decentralized peer-to-peer computer networks."),
     long_description=open("README.markdown").read(),
     author="Brian Muller",
     author_email="bamuller@gmail.com",
@@ -30,6 +31,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )

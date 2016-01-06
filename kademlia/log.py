@@ -1,4 +1,3 @@
-from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
@@ -16,7 +15,6 @@ class FileLogObserver(log.FileLogObserver):
         log.FileLogObserver.__init__(self, f or sys.stdout)
         self.level = level
         self.default = default
-
 
     def emit(self, eventDict):
         ll = eventDict.get('loglevel', self.default)
