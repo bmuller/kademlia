@@ -44,7 +44,6 @@ virtualenv: clean
 wheels: virtualenv
 	$(PIP) wheel --find-links=$(WHEEL_DIR) --wheel-dir=$(WHEEL_DIR) -r requirements.txt
 	$(PIP) wheel --find-links=$(WHEEL_DIR) --wheel-dir=$(WHEEL_DIR) -r test_requirements.txt
-	$(PIP) wheel --find-links=$(WHEEL_DIR) --wheel-dir=$(WHEEL_DIR) -r develop_requirements.txt
 
 
 wheel: test
@@ -55,7 +54,6 @@ wheel: test
 setup: virtualenv
 	$(PIP) install $(WHEEL_INSTALL_ARGS) -r requirements.txt
 	$(PIP) install $(WHEEL_INSTALL_ARGS) -r test_requirements.txt
-	$(PIP) install $(WHEEL_INSTALL_ARGS) -r develop_requirements.txt
 
 
 shell: setup
