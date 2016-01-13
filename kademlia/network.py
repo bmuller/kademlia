@@ -3,7 +3,7 @@ Package for interacting on the network at a high level.
 """
 from __future__ import unicode_literals
 
-import six
+import sys
 import random
 import pickle
 
@@ -204,12 +204,12 @@ class Server(object):
         from a cache file with the given fname.
         """
         with open(fname, 'rb') as f:
-            if six.PY2:
+            if sys.version_info[0] == 2:  # python 2
                 data = pickle.load(f)
-            else:  # PY3
+            else:  # python 3
                 data = pickle.load(f, encoding='latin1')
                 if not isinstance(data['id'], bytes): # first py3 unpickle
-                    data['id'] = six.b(data['id'])  # fix bytes
+                    data['id'] = data['id'].encode("latin-1")  # fix bytes
         s = Server(data['ksize'], data['alpha'], data['id'])
         if len(data['neighbors']) > 0:
             s.bootstrap(data['neighbors'])
