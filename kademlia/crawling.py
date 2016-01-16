@@ -32,6 +32,9 @@ class SpiderCrawl(object):
         self.log.info("creating spider with peers: %s" % peers)
         self.nearest.push(peers)
 
+    def onError(self, err):
+        self.log.error(repr(err))
+        return err
 
     def _find(self, rpcmethod):
         """
@@ -60,7 +63,10 @@ class SpiderCrawl(object):
         for peer in self.nearest.getUncontacted()[:count]:
             ds[peer.id] = rpcmethod(peer, self.node)
             self.nearest.markContacted(peer)
-        return deferredDict(ds).addCallback(self._nodesFound)
+        d = deferredDict(ds)
+        d.addCallback(self._nodesFound)
+        d.addErrback(self.onError)
+        return d
 
 
 class ValueSpiderCrawl(SpiderCrawl):
@@ -117,7 +123,9 @@ class ValueSpiderCrawl(SpiderCrawl):
         peerToSaveTo = self.nearestWithoutValue.popleft()
         if peerToSaveTo is not None:
             d = self.protocol.callStore(peerToSaveTo, self.node.id, value)
-            return d.addCallback(lambda _: value)
+            d.addCallback(lambda _: value)
+            d.addErrback(self.onError)
+            return d
         return value
 
 

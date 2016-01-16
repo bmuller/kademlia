@@ -43,6 +43,10 @@ class Server(object):
         self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
+    def onError(self, err):
+        self.log.error(repr(err))
+        return err
+
     def listen(self, port):
         """
         Start listening on the given port.
@@ -72,7 +76,10 @@ class Server(object):
                 ds.append(self.set(key, value))
             return defer.gatherResults(ds)
 
-        return defer.gatherResults(ds).addCallback(republishKeys)
+        d = defer.gatherResults(ds)
+        d.addCallback(republishKeys)
+        d.addErrback(self.onError)
+        return d
 
     def bootstrappableNeighbors(self):
         """
@@ -110,7 +117,10 @@ class Server(object):
         ds = {}
         for addr in addrs:
             ds[addr] = self.protocol.ping(addr, self.node.id)
-        return deferredDict(ds).addCallback(initTable)
+        d = deferredDict(ds)
+        d.addCallback(initTable)
+        d.addErrback(self.onError)
+        return d
 
     def inetVisibleIP(self):
         """
@@ -127,7 +137,10 @@ class Server(object):
         ds = []
         for neighbor in self.bootstrappableNeighbors():
             ds.append(self.protocol.stun(neighbor))
-        return defer.gatherResults(ds).addCallback(handle)
+        d = defer.gatherResults(ds)
+        d.addCallback(handle)
+        d.addErrback(self.onError)
+        return d
 
     def get(self, key):
         """
@@ -162,14 +175,20 @@ class Server(object):
             if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
                 self.storage[dkey] = value
             ds = [self.protocol.callStore(n, dkey, value) for n in nodes]
-            return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
+            d = defer.DeferredList(ds)
+            d.addCallback(self._anyRespondSuccess)
+            d.addErrback(self.onError)
+            return d
 
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to set key %s" % key)
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
-        return spider.find().addCallback(store)
+        d = spider.find()
+        d.addCallback(store)
+        d.addErrback(self.onError)
+        return d
 
     def _anyRespondSuccess(self, responses):
         """

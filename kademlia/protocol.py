@@ -64,22 +64,34 @@ class KademliaProtocol(RPCProtocol):
     def callFindNode(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
         d = self.find_node(address, self.sourceNode.id, nodeToFind.id)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addErrback(self.onError)
+        return d
 
     def callFindValue(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
         d = self.find_value(address, self.sourceNode.id, nodeToFind.id)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addErrback(self.onError)
+        return d
 
     def callPing(self, nodeToAsk):
         address = (nodeToAsk.ip, nodeToAsk.port)
         d = self.ping(address, self.sourceNode.id)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addErrback(self.onError)
+        return d
 
     def callStore(self, nodeToAsk, key, value):
         address = (nodeToAsk.ip, nodeToAsk.port)
         d = self.store(address, self.sourceNode.id, key, value)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addCallback(self.handleCallResponse, nodeToAsk)
+        d.addErrback(self.onError)
+        return d
+
+    def onError(self, err):
+        self.log.error(repr(err))
+        return err
 
     def welcomeIfNewNode(self, node):
         """
