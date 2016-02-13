@@ -56,12 +56,49 @@ If all you want to do is run a local server, just start the example server:
 twistd -noy examples/server.tac
 ```
 
+## Web Server Server
+In order to have a simple web server, you only need to execute the web-server that is available in the examples directory:
+
+```
+twistd -noy examples/webserver.tac
+```
+
+In this example, it is possible to POST and GET data to/from the DHT, as well as get information about the known neighbors of this peer.
+
+Post data to DHT:
+```
+curl --data "hi there" http://localhost:8080/dht/one
+```
+
+Get data from DHT:
+```
+curl http://localhost:8080/dht/one
+```
+
+Get neighbors:
+```
+curl http://localhost:8080/neighbours
+```
+
+## Distributed Environment Example
+
+With the aim of providing a basic example of a DHT network, it is available in the examples directory 3 peers source code examples (based on webserver), as well as the configuration of Virtual Machines to deploys these peer webservers (using [Vagrant](https://www.vagrantup.com/)) in a simple and fast way.
+
+```
+Peer1 --> 192.168.33.10 (8468)
+Peer2 --> 192.168.33.11 (8469)
+Peer3 --> 192.168.33.12 (8470)
+```
+
+Then, it is only necessary to execute the same commands as the Web Server section, changing the IP address.
+
 ## Running Tests
 To run tests:
 
 ```
 trial kademlia
 ```
+
 
 ## Fidelity to Original Paper
 The current implementation should be an accurate implementation of all aspects of the paper save one - in Section 2.3 there is the requirement that the original publisher of a key/value republish it every 24 hours.  This library does not do this (though you can easily do this manually).

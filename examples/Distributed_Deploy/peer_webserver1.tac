@@ -14,15 +14,59 @@ from kademlia import log
 application = service.Application("kademlia")
 application.setComponent(ILogObserver, log.FileLogObserver(sys.stdout, log.INFO).emit)
 
-if os.path.isfile('cache.pickle'):
-    kserver = Server.loadState('cache.pickle')
-else:
-    kserver = Server()
-    kserver.bootstrap([("1.2.3.4", 8468)])
-kserver.saveStateRegularly('cache.pickle', 10)
+#if os.path.isfile('cache.pickle'):
+#    kserver = Server.loadState('cache.pickle')
+#else:
+kserver = Server()
+kserver.bootstrap([("192.168.33.10", 8468)])
+#kserver.saveStateRegularly('cache.pickle', 10)
 
 udpserver = internet.UDPServer(8468, kserver.protocol)
 udpserver.setServiceParent(application)
+
+"""
+class WebResource(resource.Resource):
+    def __init__(self, kserver):
+        resource.Resource.__init__(self)
+        self.kserver = kserver
+
+    def getChild(self, child, request):
+        return self
+
+    def render_GET(self, request):
+
+        def respond(value):
+            value = value or NoResource().render(request)
+            request.write(value)
+            request.finish()
+
+        def getDHT(key):
+            log.msg("Getting key: %s" % key)
+            d = self.kserver.get(key)
+            d.addCallback(respond)
+
+        def getNeighbours():
+            log.msg("Getting neighbours list")
+            respond(json.dumps(self.kserver.getKnowNeighbours()))
+
+        reqMessage = request.path.split('/')
+        if reqMessage[1] == 'dht':
+            getDHT(reqMessage[2])
+        elif reqMessage[1] == 'neighbours':
+            getNeighbours()
+        else:
+            log.msg("Wrong Rest Call")
+        return server.NOT_DONE_YET
+
+    def render_POST(self, request):
+        key = request.path.split('/')[-1]
+        value = request.content.getvalue()
+        # Process data
+        log.msg("Setting %s = %s" % (key, value))
+        self.kserver.set(key, value)
+        return value
+"""
+
 
 # Web Resource:
 # Root resource which is responsible for handling HTTP paths.
@@ -88,16 +132,6 @@ class NeighboursHandler(resource.Resource):
         respond(json.dumps(self.kserver.getKnowNeighbours()))
         return server.NOT_DONE_YET
 
-
 website = server.Site(WebResource(kserver))
 webserver = internet.TCPServer(8080, website)
 webserver.setServiceParent(application)
-
-
-# To test, you can set with:
-# Neighbors:
-# curl http://localhost:8080/neighbours
-# Put resource to DHT.
-# $> curl --data "hi there" http://localhost:8080/dht/one
-# and get with:
-# $> curl http://localhost:8080/dht/one

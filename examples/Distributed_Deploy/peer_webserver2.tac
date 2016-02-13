@@ -14,14 +14,14 @@ from kademlia import log
 application = service.Application("kademlia")
 application.setComponent(ILogObserver, log.FileLogObserver(sys.stdout, log.INFO).emit)
 
-if os.path.isfile('cache.pickle'):
-    kserver = Server.loadState('cache.pickle')
-else:
-    kserver = Server()
-    kserver.bootstrap([("1.2.3.4", 8468)])
-kserver.saveStateRegularly('cache.pickle', 10)
+#if os.path.isfile('cache.pickle'):
+#    kserver = Server.loadState('cache.pickle')
+#else:
+kserver = Server()
+kserver.bootstrap([("192.168.33.10", 8468)])
+#kserver.saveStateRegularly('cache.pickle', 10)
 
-udpserver = internet.UDPServer(8468, kserver.protocol)
+udpserver = internet.UDPServer(8469, kserver.protocol)
 udpserver.setServiceParent(application)
 
 # Web Resource:
@@ -92,12 +92,3 @@ class NeighboursHandler(resource.Resource):
 website = server.Site(WebResource(kserver))
 webserver = internet.TCPServer(8080, website)
 webserver.setServiceParent(application)
-
-
-# To test, you can set with:
-# Neighbors:
-# curl http://localhost:8080/neighbours
-# Put resource to DHT.
-# $> curl --data "hi there" http://localhost:8080/dht/one
-# and get with:
-# $> curl http://localhost:8080/dht/one
