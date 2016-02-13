@@ -178,3 +178,13 @@ class RoutingTable(object):
                 break
 
         return map(operator.itemgetter(1), heapq.nsmallest(k, nodes))
+
+    def getRoutingNeighbors(self, node, exclude=None):
+        """
+        Get a list of the neighbors in the TableTraverser.
+        """
+        neighbours = []
+        for neighbor in TableTraverser(self, node):
+            if neighbor.id != node.id and (exclude is None or not neighbor.sameHomeAs(exclude)):
+                neighbours.append((neighbor.id.decode('latin-1'), neighbor.ip, neighbor.port, neighbor.long_id, (node.distanceTo(neighbor))))
+        return neighbours

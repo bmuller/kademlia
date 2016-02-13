@@ -168,6 +168,12 @@ class Server(object):
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
 
+    def getKnowNeighbours(self):
+        """
+        Get a list of the known peers in the overlay.
+        """
+        return self.protocol.router.getRoutingNeighbors(self.node)
+
     def _anyRespondSuccess(self, responses):
         """
         Given the result of a DeferredList of calls to peers, ensure that at least
