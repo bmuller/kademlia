@@ -40,15 +40,17 @@ class Server(object):
         self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
-    def listen(self, port):
+    def listen(self, port, interface=""):
         """
         Start listening on the given port.
 
         This is the same as calling::
 
             reactor.listenUDP(port, server.protocol)
+            
+        Provide interface="::" to accept ipv6 address
         """
-        return reactor.listenUDP(port, self.protocol)
+        return reactor.listenUDP(port, self.protocol, interface)
 
     def refreshTable(self):
         """
