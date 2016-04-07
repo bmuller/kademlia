@@ -1,6 +1,6 @@
 PYDOCTOR=pydoctor
 
-test:
+test: lint
 	trial kademlia
 
 lint:
