@@ -47,7 +47,7 @@ class Server(object):
         This is the same as calling::
 
             reactor.listenUDP(port, server.protocol)
-            
+
         Provide interface="::" to accept ipv6 address
         """
         return reactor.listenUDP(port, self.protocol, interface)
