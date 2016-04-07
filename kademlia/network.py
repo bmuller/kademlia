@@ -48,8 +48,7 @@ class Server(object):
 
             reactor.listenUDP(port, server.protocol)
 
-         Args:
-            interface: Supply `'::'` to support ipv6 address. `'::'` is as defined as ipv6 support in `twisted`.
+        Provide interface="::" to accept ipv6 address
         """
         return reactor.listenUDP(port, self.protocol, interface)
 
