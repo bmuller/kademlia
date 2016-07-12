@@ -7,7 +7,7 @@ class Node:
         self.id = id
         self.ip = ip
         self.port = port
-        self.long_id = long(id.encode('hex'), 16)
+        self.long_id = int(id.hex(), 16)
 
     def sameHomeAs(self, node):
         return self.ip == node.ip and self.port == node.port

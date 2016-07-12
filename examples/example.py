@@ -1,13 +1,18 @@
-from twisted.internet import reactor
-from twisted.python import log
-from kademlia.network import Server
-import sys
+import logging
+import asyncio
 
-log.startLogging(sys.stdout)
+from kademlia.network import Server
+
+
+logging.basicConfig(level=logging.DEBUG)
+loop = asyncio.get_event_loop()
+loop.set_debug(True)
+
+server = Server()
+server.listen(8468)
 
 def done(result):
-    print "Key result:", result
-    reactor.stop()
+    print("Key result:", result)
 
 def setDone(result, server):
     server.get("a key").addCallback(done)
@@ -15,8 +20,12 @@ def setDone(result, server):
 def bootstrapDone(found, server):
     server.set("a key", "a value").addCallback(setDone, server)
 
-server = Server()
-server.listen(8468)
-server.bootstrap([("1.2.3.4", 8468)]).addCallback(bootstrapDone, server)
+#server.bootstrap([("1.2.3.4", 8468)]).addCallback(bootstrapDone, server)
 
-reactor.run()
+try:
+    loop.run_forever()
+except KeyboardInterrupt:
+    pass
+
+server.close()
+loop.close()

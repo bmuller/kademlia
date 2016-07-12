@@ -18,7 +18,7 @@ class KBucket(object):
         self.lastUpdated = time.time()
 
     def getNodes(self):
-        return self.nodes.values()
+        return list(self.nodes.values())
 
     def split(self):
         midpoint = (self.range[0] + self.range[1]) / 2
@@ -68,7 +68,7 @@ class KBucket(object):
         return len(sp)
 
     def head(self):
-        return self.nodes.values()[0]
+        return list(self.nodes.values())[0]
 
     def __getitem__(self, id):
         return self.nodes.get(id, None)
@@ -89,7 +89,7 @@ class TableTraverser(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Pop an item from the left subtree, then right, then left, etc.
         """
@@ -99,12 +99,12 @@ class TableTraverser(object):
         if self.left and len(self.leftBuckets) > 0:
             self.currentNodes = self.leftBuckets.pop().getNodes()
             self.left = False
-            return self.next()
+            return next(self)
 
         if len(self.rightBuckets) > 0:
             self.currentNodes = self.rightBuckets.pop().getNodes()
             self.left = True
-            return self.next()
+            return next(self)
 
         raise StopIteration
 
@@ -177,4 +177,4 @@ class RoutingTable(object):
             if len(nodes) == k:
                 break
 
-        return map(operator.itemgetter(1), heapq.nsmallest(k, nodes))
+        return list(map(operator.itemgetter(1), heapq.nsmallest(k, nodes)))

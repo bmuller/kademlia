@@ -1,15 +1,10 @@
 import time
-from itertools import izip
-from itertools import imap
 from itertools import takewhile
 import operator
 from collections import OrderedDict
 
-from zope.interface import implements
-from zope.interface import Interface
 
-
-class IStorage(Interface):
+class IStorage:
     """
     Local storage for this node.
     """
@@ -18,31 +13,34 @@ class IStorage(Interface):
         """
         Set a key to the given value.
         """
+        raise NotImplementedError
 
     def __getitem__(key):
         """
         Get the given key.  If item doesn't exist, raises C{KeyError}
         """
+        raise NotImplementedError
 
     def get(key, default=None):
         """
         Get given key.  If not found, return default.
         """
+        raise NotImplementedError
 
     def iteritemsOlderThan(secondsOld):
         """
         Return the an iterator over (key, value) tuples for items older than the given secondsOld.
         """
+        raise NotImplementedError
 
     def iteritems():
         """
         Get the iterator for this storage, should yield tuple of (key, value)
         """
+        raise NotImplementedError
 
 
-class ForgetfulStorage(object):
-    implements(IStorage)
-
+class ForgetfulStorage(IStorage):
     def __init__(self, ttl=604800):
         """
         By default, max age is a week.
@@ -82,16 +80,16 @@ class ForgetfulStorage(object):
         minBirthday = time.time() - secondsOld
         zipped = self._tripleIterable()
         matches = takewhile(lambda r: minBirthday >= r[1], zipped)
-        return imap(operator.itemgetter(0, 2), matches)
+        return list(map(operator.itemgetter(0, 2), matches))
 
     def _tripleIterable(self):
-        ikeys = self.data.iterkeys()
-        ibirthday = imap(operator.itemgetter(0), self.data.itervalues())
-        ivalues = imap(operator.itemgetter(1), self.data.itervalues())
-        return izip(ikeys, ibirthday, ivalues)
+        ikeys = self.data.keys()
+        ibirthday = map(operator.itemgetter(0), self.data.values())
+        ivalues = map(operator.itemgetter(1), self.data.values())
+        return zip(ikeys, ibirthday, ivalues)
 
-    def iteritems(self):
+    def items(self):
         self.cull()
-        ikeys = self.data.iterkeys()
-        ivalues = imap(operator.itemgetter(1), self.data.itervalues())
-        return izip(ikeys, ivalues)
+        ikeys = self.data.keys()
+        ivalues = map(operator.itemgetter(1), self.data.values())
+        return zip(ikeys, ivalues)

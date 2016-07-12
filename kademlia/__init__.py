@@ -1,5 +1,4 @@
 """
-Kademlia is a Python implementation of the Kademlia protocol for `Twisted <http://twistedmatrix.com>`_.
+Kademlia is a Python implementation of the Kademlia protocol which utilizes the asyncio library.
 """
-version_info = (0, 6)
-version = '.'.join(map(str, version_info))
+__version__ = "1.0"

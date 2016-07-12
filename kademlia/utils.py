@@ -3,39 +3,19 @@ General catchall for functions that don't make sense as methods.
 """
 import hashlib
 import operator
+import asyncio
 
-from twisted.internet import defer
+
+async def gather_dict(d):
+    cors = list(d.values())
+    results = await asyncio.gather(*cors)
+    return dict(zip(d.keys(), results))
 
 
 def digest(s):
-    if not isinstance(s, str):
-        s = str(s)
+    if not isinstance(s, bytes):
+        s = str(s).encode('utf8')
     return hashlib.sha1(s).digest()
-
-
-def deferredDict(d):
-    """
-    Just like a :class:`defer.DeferredList` but instead accepts and returns a :class:`dict`.
-
-    Args:
-        d: A :class:`dict` whose values are all :class:`defer.Deferred` objects.
-
-    Returns:
-        :class:`defer.DeferredList` whose callback will be given a dictionary whose
-        keys are the same as the parameter :obj:`d` and whose values are the results
-        of each individual deferred call.
-    """
-    if len(d) == 0:
-        return defer.succeed({})
-
-    def handle(results, names):
-        rvalue = {}
-        for index in range(len(results)):
-            rvalue[names[index]] = results[index][1]
-        return rvalue
-
-    dl = defer.DeferredList(d.values())
-    return dl.addCallback(handle, d.keys())
 
 
 class OrderedSet(list):

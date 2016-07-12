@@ -1,8 +1,8 @@
 from collections import Counter
+from logging import getLogger
 
-from kademlia.log import Logger
-from kademlia.utils import deferredDict
 from kademlia.node import Node, NodeHeap
+from kademlia.utils import gather_dict
 
 
 class SpiderCrawl(object):
@@ -26,12 +26,12 @@ class SpiderCrawl(object):
         self.node = node
         self.nearest = NodeHeap(self.node, self.ksize)
         self.lastIDsCrawled = []
-        self.log = Logger(system=self)
+        self.log = getLogger("kademlia-spider")
         self.log.info("creating spider with peers: %s" % peers)
         self.nearest.push(peers)
 
 
-    def _find(self, rpcmethod):
+    async def _find(self, rpcmethod):
         """
         Get either a value or list of nodes.
 
@@ -58,7 +58,8 @@ class SpiderCrawl(object):
         for peer in self.nearest.getUncontacted()[:count]:
             ds[peer.id] = rpcmethod(peer, self.node)
             self.nearest.markContacted(peer)
-        return deferredDict(ds).addCallback(self._nodesFound)
+        found = await gather_dict(ds)
+        return await self._nodesFound(found)
 
 
 class ValueSpiderCrawl(SpiderCrawl):
@@ -68,13 +69,13 @@ class ValueSpiderCrawl(SpiderCrawl):
         # section 2.3 so we can set the key there if found
         self.nearestWithoutValue = NodeHeap(self.node, 1)
 
-    def find(self):
+    async def find(self):
         """
         Find either the closest nodes or the value requested.
         """
-        return self._find(self.protocol.callFindValue)
+        return await self._find(self.protocol.callFindValue)
 
-    def _nodesFound(self, responses):
+    async def _nodesFound(self, responses):
         """
         Handle the result of an iteration in _find.
         """
@@ -93,13 +94,13 @@ class ValueSpiderCrawl(SpiderCrawl):
         self.nearest.remove(toremove)
 
         if len(foundValues) > 0:
-            return self._handleFoundValues(foundValues)
+            return await self._handleFoundValues(foundValues)
         if self.nearest.allBeenContacted():
             # not found!
             return None
-        return self.find()
+        return await self.find()
 
-    def _handleFoundValues(self, values):
+    async def _handleFoundValues(self, values):
         """
         We got some values!  Exciting.  But let's make sure
         they're all the same or freak out a little bit.  Also,
@@ -114,19 +115,18 @@ class ValueSpiderCrawl(SpiderCrawl):
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
         if peerToSaveTo is not None:
-            d = self.protocol.callStore(peerToSaveTo, self.node.id, value)
-            return d.addCallback(lambda _: value)
+            await self.protocol.callStore(peerToSaveTo, self.node.id, value)
         return value
 
 
 class NodeSpiderCrawl(SpiderCrawl):
-    def find(self):
+    async def find(self):
         """
         Find the closest nodes.
         """
-        return self._find(self.protocol.callFindNode)
+        return await self._find(self.protocol.callFindNode)
 
-    def _nodesFound(self, responses):
+    async def _nodesFound(self, responses):
         """
         Handle the result of an iteration in _find.
         """
