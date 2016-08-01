@@ -61,7 +61,7 @@ class Server(object):
         for id in self.protocol.getRefreshIDs():
             node = Node(id)
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
-            spider = NodeSpiderCrawl(self.protocol, node, nearest)
+            spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
             ds.append(spider.find())
 
         def republishKeys(_):
