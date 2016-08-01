@@ -22,7 +22,7 @@ class KademliaProtocol(RPCProtocol):
         """
         ids = []
         for bucket in self.router.getLonelyBuckets():
-            ids.append(random.randint(*bucket.range))
+            ids.append(random.randint(*bucket.range).to_bytes(20, byteorder='big'))
         return ids
 
     def rpc_stun(self, sender):

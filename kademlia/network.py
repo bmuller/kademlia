@@ -73,7 +73,7 @@ class Server(object):
         for id in self.protocol.getRefreshIDs():
             node = Node(id)
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
-            spider = NodeSpiderCrawl(self.protocol, node, nearest)
+            spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha, self.node.long_id)
             ds.append(spider.find())
 
         # do our crawling
