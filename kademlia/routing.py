@@ -2,8 +2,8 @@ import heapq
 import time
 import operator
 import asyncio
-from collections import OrderedDict
 
+from collections import OrderedDict
 from kademlia.utils import OrderedSet, sharedPrefix
 
 
