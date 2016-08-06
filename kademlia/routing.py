@@ -4,7 +4,7 @@ import operator
 import asyncio
 
 from collections import OrderedDict
-from kademlia.utils import OrderedSet, sharedPrefix
+from kademlia.utils import OrderedSet, sharedPrefix, bytesToBitString
 
 
 class KBucket(object):
@@ -65,7 +65,7 @@ class KBucket(object):
         return True
 
     def depth(self):
-        sp = sharedPrefix([n.id for n in self.nodes.values()])
+        sp = sharedPrefix([bytesToBitString(n.id) for n in self.nodes.values()])
         return len(sp)
 
     def head(self):

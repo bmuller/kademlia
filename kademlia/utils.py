@@ -49,3 +49,8 @@ def sharedPrefix(args):
             break
         i += 1
     return args[0][:i]
+
+
+def bytesToBitString(bytes):
+    bits = [bin(byte)[2:].rjust(8, '0') for byte in bytes]
+    return "".join(bits)
