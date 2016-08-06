@@ -1,8 +1,9 @@
 import heapq
 import time
 import operator
-from collections import OrderedDict
+import asyncio
 
+from collections import OrderedDict
 from kademlia.utils import OrderedSet, sharedPrefix
 
 
@@ -158,7 +159,7 @@ class RoutingTable(object):
             self.splitBucket(index)
             self.addContact(node)
         else:
-            self.protocol.callPing(bucket.head())
+            asyncio.ensure_future(self.protocol.callPing(bucket.head()))
 
     def getBucketFor(self, node):
         """
