@@ -15,7 +15,7 @@ def mknode(id=None, ip=None, port=None, intid=None):
     """
     if intid is not None:
         id = pack('>l', intid)
-    id = id or hashlib.sha1(str(random.getrandbits(255))).digest()
+    id = id or hashlib.sha1(str(random.getrandbits(255)).encode()).digest()
     return Node(id, ip, port)
 
 
