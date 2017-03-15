@@ -2,6 +2,7 @@
 Package for interacting on the network at a high level.
 """
 import random
+import binascii
 import pickle
 
 from twisted.internet.task import LoopingCall
@@ -67,8 +68,8 @@ class Server(object):
         def republishKeys(_):
             ds = []
             # Republish keys older than one hour
-            for key, value in self.storage.iteritemsOlderThan(3600):
-                ds.append(self.set(key, value))
+            for dkey, value in self.storage.iteritemsOlderThan(3600):
+                ds.append(self.digest_set(dkey, value))
             return defer.gatherResults(ds)
 
         return defer.gatherResults(ds).addCallback(republishKeys)
@@ -153,10 +154,18 @@ class Server(object):
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
+        return self.digest_set(dkey, value)
+
+    def digest_set(self, dkey, value):
+        """
+        Set the given SHA1 digest key to the given value in the network.
+        """
         node = Node(dkey)
+        # this is useful for debugging messages
+        hkey = binascii.hexlify(dkey)
 
         def store(nodes):
-            self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
+            self.log.info("setting '%s' on %s" % (hkey, map(str, nodes)))
             # if this node is close too, then store here as well
             if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
                 self.storage[dkey] = value
@@ -165,7 +174,7 @@ class Server(object):
 
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            self.log.warning("There are no known neighbors to set key %s" % key)
+            self.log.warning("There are no known neighbors to set key %s" % hkey)
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)

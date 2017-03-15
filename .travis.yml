@@ -2,5 +2,5 @@ language: python
 python:
   - "2.7"
   - "pypy"
-install: pip install . --use-mirrors && pip install pep8 pyflakes
+install: pip install . pep8 pyflakes
 script: make test
