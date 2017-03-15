@@ -61,7 +61,7 @@ class Server(object):
         for id in self.protocol.getRefreshIDs():
             node = Node(id)
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
-            spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
+            spider = NodeSpiderCrawl(self.protocol, node, nearest)
             ds.append(spider.find())
 
         def republishKeys(_):
@@ -128,35 +128,31 @@ class Server(object):
             ds.append(self.protocol.stun(neighbor))
         return defer.gatherResults(ds).addCallback(handle)
 
-    def get(self, key):
+    def get(self, dkey):
         """
         Get a key if the network has it.
 
         Returns:
             :class:`None` if not found, the value otherwise.
         """
-        dkey = digest(key)
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
             return defer.succeed(self.storage.get(dkey))
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            self.log.warning("There are no known neighbors to get key %s" % key)
+            self.log.warning("There are no known neighbors to get key")
             return defer.succeed(None)
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
-    def set(self, key, value):
+    def set(self, dkey, value):
         """
         Set the given key to the given value in the network.
-        """
-        self.log.debug("setting '%s' = '%s' on network" % (key, value))
-        dkey = digest(key)
+        """    
         node = Node(dkey)
 
         def store(nodes):
-            self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
             # if this node is close too, then store here as well
             if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
                 self.storage[dkey] = value
@@ -165,7 +161,7 @@ class Server(object):
 
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            self.log.warning("There are no known neighbors to set key %s" % key)
+            self.log.warning("There are no known neighbors to set key")
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
