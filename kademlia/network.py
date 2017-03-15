@@ -80,8 +80,8 @@ class Server(object):
         await asyncio.gather(*ds)
 
         # now republish keys older than one hour
-        for key, value in self.storage.iteritemsOlderThan(3600):
-            await self.set(key, value)
+        for dkey, value in self.storage.iteritemsOlderThan(3600):
+            await self.digest_set(dkey, value)
 
     def bootstrappableNeighbors(self):
         """
@@ -151,20 +151,26 @@ class Server(object):
 
     async def set(self, key, value):
         """
-        Set the given key to the given value in the network.
+        Set the given string key to the given value in the network.
         """
         self.log.debug("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
+        return await self.set_digest(dkey, value)
+
+    async def set_digest(self, dkey, value):
+        """
+        Set the given SHA1 digest key (bytes) to the given value in the network.
+        """
         node = Node(dkey)
 
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            self.log.warning("There are no known neighbors to set key %s" % key)
+            self.log.warning("There are no known neighbors to set key %s" % dkey.hex())
             return False
 
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         nodes = await spider.find()
-        self.log.info("setting '%s' on %s" % (key, list(map(str, nodes))))
+        self.log.info("setting '%s' on %s" % (dkey.hex(), list(map(str, nodes))))
 
         # if this node is close too, then store here as well
         if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
