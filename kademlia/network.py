@@ -20,7 +20,9 @@ class Server(object):
     to start listening as an active node on the network.
     """
 
-    def __init__(self, ksize=20, alpha=3, id=None, storage=None, protocol_class=None):
+    protocol_class = KademliaProtocol
+
+    def __init__(self, ksize=20, alpha=3, id=None, storage=None):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -38,8 +40,6 @@ class Server(object):
         self.transport = None
         self.protocol = None
         self.refresh_loop = None
-
-        self.protocol_class = protocol_class or KademliaProtocol
 
     def stop(self):
         if self.refresh_loop is not None:
