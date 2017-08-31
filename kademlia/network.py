@@ -20,7 +20,7 @@ class Server(object):
     to start listening as an active node on the network.
     """
 
-    def __init__(self, ksize=20, alpha=3, id=None, storage=None):
+    def __init__(self, ksize=20, alpha=3, id=None, storage=None, protocol_class=None):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -39,6 +39,8 @@ class Server(object):
         self.protocol = None
         self.refresh_loop = None
 
+        self.protocol_class = protocol_class or KademliaProtocol
+
     def stop(self):
         if self.refresh_loop is not None:
             self.refresh_loop.cancel()
@@ -52,7 +54,7 @@ class Server(object):
 
         Provide interface="::" to accept ipv6 address
         """
-        proto_factory = lambda: KademliaProtocol(self.node, self.storage, self.ksize)
+        proto_factory = lambda: self.protocol_class(self.node, self.storage, self.ksize)
         loop = asyncio.get_event_loop()
         listen = loop.create_datagram_endpoint(proto_factory, local_addr=(interface, port))
         self.transport, self.protocol = loop.run_until_complete(listen)
