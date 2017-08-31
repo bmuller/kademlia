@@ -26,6 +26,6 @@ try:
     loop.run_forever()
 except KeyboardInterrupt:
     pass
-
-server.close()
-loop.close()
+finally:
+    server.stop()
+    loop.close()
