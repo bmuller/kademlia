@@ -141,7 +141,7 @@ class NodeSpiderCrawl(SpiderCrawl):
 
         if self.nearest.allBeenContacted():
             return list(self.nearest)
-        return self.find()
+        return await self.find()
 
 
 class RPCFindResponse(object):
