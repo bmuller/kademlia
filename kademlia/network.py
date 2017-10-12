@@ -193,7 +193,7 @@ class Server(object):
         if len(data['neighbors']) == 0:
             self.log.warning("No known neighbors, so not writing to cache.")
             return
-        with open(fname, 'w') as f:
+        with open(fname, 'wb') as f:
             pickle.dump(data, f)
 
     @classmethod
@@ -202,23 +202,23 @@ class Server(object):
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
         """
-        with open(fname, 'r') as f:
+        with open(fname, 'rb') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])
         if len(data['neighbors']) > 0:
             s.bootstrap(data['neighbors'])
         return s
 
-    def saveStateRegularly(self, fname, frequency=600):
+    async def saveStateRegularly(self, fname, frequency=600):
         """
         Save the state of node with a given regularity to the given
         filename.
 
         Args:
             fname: File name to save retularly to
-            frequencey: Frequency in seconds that the state should be saved.
+            frequency: Frequency in seconds that the state should be saved.
                         By default, 10 minutes.
         """
-        loop = LoopingCall(self.saveState, fname)
-        loop.start(frequency)
-        return loop
+        while True:
+            self.saveState(fname)
+            await asyncio.sleep(frequency)
