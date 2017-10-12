@@ -209,16 +209,16 @@ class Server(object):
             s.bootstrap(data['neighbors'])
         return s
 
-    def saveStateRegularly(self, fname, frequency=600):
+    async def saveStateRegularly(self, fname, frequency=600):
         """
         Save the state of node with a given regularity to the given
         filename.
 
         Args:
             fname: File name to save retularly to
-            frequencey: Frequency in seconds that the state should be saved.
+            frequency: Frequency in seconds that the state should be saved.
                         By default, 10 minutes.
         """
-        loop = LoopingCall(self.saveState, fname)
-        loop.start(frequency)
-        return loop
+        while True:
+            self.saveState(fname)
+            await asyncio.sleep(frequency)
