@@ -193,7 +193,7 @@ class Server(object):
         if len(data['neighbors']) == 0:
             self.log.warning("No known neighbors, so not writing to cache.")
             return
-        with open(fname, 'w') as f:
+        with open(fname, 'wb') as f:
             pickle.dump(data, f)
 
     @classmethod
@@ -202,7 +202,7 @@ class Server(object):
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
         """
-        with open(fname, 'r') as f:
+        with open(fname, 'rb') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])
         if len(data['neighbors']) > 0:
