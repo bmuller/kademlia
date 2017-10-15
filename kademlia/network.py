@@ -48,6 +48,9 @@ class Server(object):
         if self.transport is not None:
             self.transport.close()
 
+        if self.save_state_loop is not None:
+            self.save_state_loop.cancel()
+
     def listen(self, port, interface='0.0.0.0'):
         """
         Start listening on the given port.
@@ -209,7 +212,7 @@ class Server(object):
             s.bootstrap(data['neighbors'])
         return s
 
-    async def saveStateRegularly(self, fname, frequency=600):
+    def saveStateRegularly(self, fname, frequency=600):
         """
         Save the state of node with a given regularity to the given
         filename.
@@ -219,6 +222,9 @@ class Server(object):
             frequency: Frequency in seconds that the state should be saved.
                         By default, 10 minutes.
         """
-        while True:
-            self.saveState(fname)
-            await asyncio.sleep(frequency)
+        asyncio.ensure_future(self._saveStateRegularly(fname))
+        loop = asyncio.get_event_loop()
+        self.save_state_loop = loop.call_later(frequency, self.saveStateRegularly, fname, frequency)
+
+    async def _saveStateRegularly(self, fname):
+        self.saveState(fname)
