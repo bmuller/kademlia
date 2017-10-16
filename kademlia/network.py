@@ -222,9 +222,6 @@ class Server(object):
             frequency: Frequency in seconds that the state should be saved.
                         By default, 10 minutes.
         """
-        asyncio.ensure_future(self._saveStateRegularly(fname))
+        self.saveState(fname)
         loop = asyncio.get_event_loop()
         self.save_state_loop = loop.call_later(frequency, self.saveStateRegularly, fname, frequency)
-
-    async def _saveStateRegularly(self, fname):
-        self.saveState(fname)
