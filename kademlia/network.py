@@ -40,13 +40,17 @@ class Server(object):
         self.transport = None
         self.protocol = None
         self.refresh_loop = None
+        self.save_state_loop = None
 
     def stop(self):
-        if self.refresh_loop is not None:
-            self.refresh_loop.cancel()
-
         if self.transport is not None:
             self.transport.close()
+
+        if self.refresh_loop:
+            self.refresh_loop.cancel()
+
+        if self.save_state_loop:
+            self.save_state_loop.cancel()
 
     def listen(self, port, interface='0.0.0.0'):
         """
@@ -193,7 +197,7 @@ class Server(object):
         if len(data['neighbors']) == 0:
             self.log.warning("No known neighbors, so not writing to cache.")
             return
-        with open(fname, 'w') as f:
+        with open(fname, 'wb') as f:
             pickle.dump(data, f)
 
     @classmethod
@@ -202,7 +206,7 @@ class Server(object):
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
         """
-        with open(fname, 'r') as f:
+        with open(fname, 'rb') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])
         if len(data['neighbors']) > 0:
@@ -216,9 +220,9 @@ class Server(object):
 
         Args:
             fname: File name to save retularly to
-            frequencey: Frequency in seconds that the state should be saved.
+            frequency: Frequency in seconds that the state should be saved.
                         By default, 10 minutes.
         """
-        loop = LoopingCall(self.saveState, fname)
-        loop.start(frequency)
-        return loop
+        self.saveState(fname)
+        loop = asyncio.get_event_loop()
+        self.save_state_loop = loop.call_later(frequency, self.saveStateRegularly, fname, frequency)
