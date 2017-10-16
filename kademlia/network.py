@@ -40,15 +40,16 @@ class Server(object):
         self.transport = None
         self.protocol = None
         self.refresh_loop = None
+        self.save_state_loop = None
 
     def stop(self):
-        if self.refresh_loop is not None:
-            self.refresh_loop.cancel()
-
         if self.transport is not None:
             self.transport.close()
 
-        if self.save_state_loop is not None:
+        if self.refresh_loop:
+            self.refresh_loop.cancel()
+
+        if self.save_state_loop:
             self.save_state_loop.cancel()
 
     def listen(self, port, interface='0.0.0.0'):
