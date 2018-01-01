@@ -1,5 +1,0 @@
-twisted>=14.0
-rpcudp>=1.0
-sphinxcontrib-napoleon>=0.2.8
-sphinx==1.2.3
-sphinxcontrib-zopeext>=0.2.1

@@ -63,5 +63,24 @@ To run tests:
 trial kademlia
 ```
 
+## Logging
+This library uses the standard [Python logging library](https://docs.python.org/3/library/logging.html).  To see debut output printed to STDOUT, for instance, use:
+
+```python
+import logging
+
+log = logging.getLogger('rpcudp')
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.StreamHandler())
+```
+
+## Running Tests
+To run tests:
+
+```
+pip install -r dev-requirements.txt
+python -m unittest
+```
+
 ## Fidelity to Original Paper
 The current implementation should be an accurate implementation of all aspects of the paper save one - in Section 2.3 there is the requirement that the original publisher of a key/value republish it every 24 hours.  This library does not do this (though you can easily do this manually).

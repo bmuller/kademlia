@@ -1,0 +1,5 @@
+pycodestyle==2.3.1
+pylint==1.8.1
+sphinx>=1.6.5
+sphinxcontrib-napoleon>=0.6.1
+sphinxcontrib-zopeext>=0.2.1
