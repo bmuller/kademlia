@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Kademlia'
-copyright = u'2015, Brian Muller'
+copyright = u'2018, Brian Muller'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -59,7 +59,7 @@ copyright = u'2015, Brian Muller'
 # The short X.Y version.
 sys.path.insert(0, os.path.abspath('..'))
 import kademlia
-version = kademlia.version
+version = kademlia.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 

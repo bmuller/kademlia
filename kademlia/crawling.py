@@ -1,8 +1,10 @@
 from collections import Counter
+import logging
 
-from kademlia.log import Logger
-from kademlia.utils import deferredDict
 from kademlia.node import Node, NodeHeap
+from kademlia.utils import gather_dict
+
+log = logging.getLogger(__name__)
 
 
 class SpiderCrawl(object):
@@ -15,8 +17,10 @@ class SpiderCrawl(object):
 
         Args:
             protocol: A :class:`~kademlia.protocol.KademliaProtocol` instance.
-            node: A :class:`~kademlia.node.Node` representing the key we're looking for
-            peers: A list of :class:`~kademlia.node.Node` instances that provide the entry point for the network
+            node: A :class:`~kademlia.node.Node` representing the key we're
+                  looking for
+            peers: A list of :class:`~kademlia.node.Node` instances that
+                   provide the entry point for the network
             ksize: The value for k based on the paper
             alpha: The value for alpha based on the paper
         """
@@ -26,12 +30,10 @@ class SpiderCrawl(object):
         self.node = node
         self.nearest = NodeHeap(self.node, self.ksize)
         self.lastIDsCrawled = []
-        self.log = Logger(system=self)
-        self.log.info("creating spider with peers: %s" % peers)
+        log.info("creating spider with peers: %s", peers)
         self.nearest.push(peers)
 
-
-    def _find(self, rpcmethod):
+    async def _find(self, rpcmethod):
         """
         Get either a value or list of nodes.
 
@@ -41,16 +43,15 @@ class SpiderCrawl(object):
         The process:
           1. calls find_* to current ALPHA nearest not already queried nodes,
              adding results to current nearest list of k nodes.
-          2. current nearest list needs to keep track of who has been queried already
-             sort by nearest, keep KSIZE
+          2. current nearest list needs to keep track of who has been queried
+             already sort by nearest, keep KSIZE
           3. if list is same as last time, next call should be to everyone not
              yet queried
           4. repeat, unless nearest list has all been queried, then ur done
         """
-        self.log.info("crawling with nearest: %s" % str(tuple(self.nearest)))
+        log.info("crawling network with nearest: %s", str(tuple(self.nearest)))
         count = self.alpha
         if self.nearest.getIDs() == self.lastIDsCrawled:
-            self.log.info("last iteration same as current - checking all in list now")
             count = len(self.nearest)
         self.lastIDsCrawled = self.nearest.getIDs()
 
@@ -58,7 +59,11 @@ class SpiderCrawl(object):
         for peer in self.nearest.getUncontacted()[:count]:
             ds[peer.id] = rpcmethod(peer, self.node)
             self.nearest.markContacted(peer)
-        return deferredDict(ds).addCallback(self._nodesFound)
+        found = await gather_dict(ds)
+        return await self._nodesFound(found)
+
+    async def _nodesFound(self, responses):
+        raise NotImplementedError
 
 
 class ValueSpiderCrawl(SpiderCrawl):
@@ -68,13 +73,13 @@ class ValueSpiderCrawl(SpiderCrawl):
         # section 2.3 so we can set the key there if found
         self.nearestWithoutValue = NodeHeap(self.node, 1)
 
-    def find(self):
+    async def find(self):
         """
         Find either the closest nodes or the value requested.
         """
-        return self._find(self.protocol.callFindValue)
+        return await self._find(self.protocol.callFindValue)
 
-    def _nodesFound(self, responses):
+    async def _nodesFound(self, responses):
         """
         Handle the result of an iteration in _find.
         """
@@ -93,13 +98,13 @@ class ValueSpiderCrawl(SpiderCrawl):
         self.nearest.remove(toremove)
 
         if len(foundValues) > 0:
-            return self._handleFoundValues(foundValues)
+            return await self._handleFoundValues(foundValues)
         if self.nearest.allBeenContacted():
             # not found!
             return None
-        return self.find()
+        return await self.find()
 
-    def _handleFoundValues(self, values):
+    async def _handleFoundValues(self, values):
         """
         We got some values!  Exciting.  But let's make sure
         they're all the same or freak out a little bit.  Also,
@@ -108,25 +113,24 @@ class ValueSpiderCrawl(SpiderCrawl):
         """
         valueCounts = Counter(values)
         if len(valueCounts) != 1:
-            args = (self.node.long_id, str(values))
-            self.log.warning("Got multiple values for key %i: %s" % args)
+            log.warning("Got multiple values for key %i: %s",
+                        self.node.long_id, str(values))
         value = valueCounts.most_common(1)[0][0]
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
         if peerToSaveTo is not None:
-            d = self.protocol.callStore(peerToSaveTo, self.node.id, value)
-            return d.addCallback(lambda _: value)
+            await self.protocol.callStore(peerToSaveTo, self.node.id, value)
         return value
 
 
 class NodeSpiderCrawl(SpiderCrawl):
-    def find(self):
+    async def find(self):
         """
         Find the closest nodes.
         """
-        return self._find(self.protocol.callFindNode)
+        return await self._find(self.protocol.callFindNode)
 
-    def _nodesFound(self, responses):
+    async def _nodesFound(self, responses):
         """
         Handle the result of an iteration in _find.
         """
@@ -141,7 +145,7 @@ class NodeSpiderCrawl(SpiderCrawl):
 
         if self.nearest.allBeenContacted():
             return list(self.nearest)
-        return self.find()
+        return await self.find()
 
 
 class RPCFindResponse(object):

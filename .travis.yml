@@ -1,6 +1,6 @@
 language: python
 python:
-  - "2.7"
-  - "pypy"
-install: pip install . pep8 pyflakes
-script: make test
+  - "3.5"
+  - "3.6"
+install: pip install . && pip install -r dev-requirements.txt
+script: python -m unittest

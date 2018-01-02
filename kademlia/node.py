@@ -3,11 +3,11 @@ import heapq
 
 
 class Node:
-    def __init__(self, id, ip=None, port=None):
-        self.id = id
+    def __init__(self, node_id, ip=None, port=None):
+        self.id = node_id
         self.ip = ip
         self.port = port
-        self.long_id = long(id.encode('hex'), 16)
+        self.long_id = int(node_id.hex(), 16)
 
     def sameHomeAs(self, node):
         return self.ip == node.ip and self.port == node.port
@@ -64,9 +64,9 @@ class NodeHeap(object):
                 heapq.heappush(nheap, (distance, node))
         self.heap = nheap
 
-    def getNodeById(self, id):
+    def getNodeById(self, node_id):
         for _, node in self.heap:
-            if node.id == id:
+            if node.id == node_id:
                 return node
         return None
 
@@ -106,7 +106,7 @@ class NodeHeap(object):
         return iter(map(itemgetter(1), nodes))
 
     def __contains__(self, node):
-        for distance, n in self.heap:
+        for _, n in self.heap:
             if node.id == n.id:
                 return True
         return False

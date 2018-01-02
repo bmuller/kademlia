@@ -1,13 +1,14 @@
 import random
-
-from twisted.internet import defer
+import asyncio
+import logging
 
 from rpcudp.protocol import RPCProtocol
 
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
-from kademlia.log import Logger
 from kademlia.utils import digest
+
+log = logging.getLogger(__name__)
 
 
 class KademliaProtocol(RPCProtocol):
@@ -16,7 +17,6 @@ class KademliaProtocol(RPCProtocol):
         self.router = RoutingTable(self, ksize, sourceNode)
         self.storage = storage
         self.sourceNode = sourceNode
-        self.log = Logger(system=self)
 
     def getRefreshIDs(self):
         """
@@ -24,7 +24,8 @@ class KademliaProtocol(RPCProtocol):
         """
         ids = []
         for bucket in self.router.getLonelyBuckets():
-            ids.append(random.randint(*bucket.range))
+            rid = random.randint(*bucket.range).to_bytes(20, byteorder='big')
+            ids.append(rid)
         return ids
 
     def rpc_stun(self, sender):
@@ -38,16 +39,19 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
-        self.log.debug("got a store request from %s, storing value" % str(sender))
+        log.debug("got a store request from %s, storing '%s'='%s'",
+                  sender, key.hex(), value)
         self.storage[key] = value
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
-        self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
+        log.info("finding neighbors of %i in local table",
+                 int(nodeid.hex(), 16))
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
         node = Node(key)
-        return map(tuple, self.router.findNeighbors(node, exclude=source))
+        neighbors = self.router.findNeighbors(node, exclude=source)
+        return list(map(tuple, neighbors))
 
     def rpc_find_value(self, sender, nodeid, key):
         source = Node(nodeid, sender[0], sender[1])
@@ -55,27 +59,29 @@ class KademliaProtocol(RPCProtocol):
         value = self.storage.get(key, None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
-        return { 'value': value }
+        return {'value': value}
 
-    def callFindNode(self, nodeToAsk, nodeToFind):
+    async def callFindNode(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.find_node(address, self.sourceNode.id, nodeToFind.id)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        result = await self.find_node(address, self.sourceNode.id,
+                                      nodeToFind.id)
+        return self.handleCallResponse(result, nodeToAsk)
 
-    def callFindValue(self, nodeToAsk, nodeToFind):
+    async def callFindValue(self, nodeToAsk, nodeToFind):
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.find_value(address, self.sourceNode.id, nodeToFind.id)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        result = await self.find_value(address, self.sourceNode.id,
+                                       nodeToFind.id)
+        return self.handleCallResponse(result, nodeToAsk)
 
-    def callPing(self, nodeToAsk):
+    async def callPing(self, nodeToAsk):
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.ping(address, self.sourceNode.id)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        result = await self.ping(address, self.sourceNode.id)
+        return self.handleCallResponse(result, nodeToAsk)
 
-    def callStore(self, nodeToAsk, key, value):
+    async def callStore(self, nodeToAsk, key, value):
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.store(address, self.sourceNode.id, key, value)
-        return d.addCallback(self.handleCallResponse, nodeToAsk)
+        result = await self.store(address, self.sourceNode.id, key, value)
+        return self.handleCallResponse(result, nodeToAsk)
 
     def welcomeIfNewNode(self, node):
         """
@@ -91,28 +97,32 @@ class KademliaProtocol(RPCProtocol):
         is closer than the closest in that list, then store the key/value
         on the new node (per section 2.5 of the paper)
         """
-        if self.router.isNewNode(node):
-            ds = []
-            for key, value in self.storage.iteritems():
-                keynode = Node(digest(key))
-                neighbors = self.router.findNeighbors(keynode)
-                if len(neighbors) > 0:
-                    newNodeClose = node.distanceTo(keynode) < neighbors[-1].distanceTo(keynode)
-                    thisNodeClosest = self.sourceNode.distanceTo(keynode) < neighbors[0].distanceTo(keynode)
-                if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
-                    ds.append(self.callStore(node, key, value))
-            self.router.addContact(node)
-            return defer.gatherResults(ds)
+        if not self.router.isNewNode(node):
+            return
+
+        log.info("never seen %s before, adding to router", node)
+        for key, value in self.storage.items():
+            keynode = Node(digest(key))
+            neighbors = self.router.findNeighbors(keynode)
+            if len(neighbors) > 0:
+                last = neighbors[-1].distanceTo(keynode)
+                newNodeClose = node.distanceTo(keynode) < last
+                first = neighbors[0].distanceTo(keynode)
+                thisNodeClosest = self.sourceNode.distanceTo(keynode) < first
+            if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
+                asyncio.ensure_future(self.callStore(node, key, value))
+        self.router.addContact(node)
 
     def handleCallResponse(self, result, node):
         """
         If we get a response, add the node to the routing table.  If
         we get no response, make sure it's removed from the routing table.
         """
-        if result[0]:
-            self.log.info("got response from %s, adding to router" % node)
-            self.welcomeIfNewNode(node)
-        else:
-            self.log.debug("no response from %s, removing from router" % node)
+        if not result[0]:
+            log.warning("no response from %s, removing from router", node)
             self.router.removeContact(node)
+            return result
+
+        log.info("got successful response from %s", node)
+        self.welcomeIfNewNode(node)
         return result

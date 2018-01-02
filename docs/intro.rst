@@ -8,21 +8,16 @@ The easiest (and best) way to install kademlia is through `pip <http://www.pip-i
 
 Usage
 =====
-Assuming you want to connect to an existing network (run the `Stand-alone Server`_ example below if you don't have a network):
+To start a new network, create the first node.  Future nodes will connect to this first node (and any other nodes you know about) to create the network.
 
-.. literalinclude:: ../examples/example.py
+.. literalinclude:: ../examples/first_node.py
 
-Check out the examples folder for other examples.
+Here's an example of bootstrapping a new node against a known node and then setting a value:
+
+.. literalinclude:: ../examples/set.py
 
 .. note ::
     You must have at least two nodes running to store values.  If a node tries to store a value and there are no other nodes to provide redundancy, then it is an exception state.
-
-Stand-alone Server
-==================
-
-If all you want to do is run a local server, just start the example server::
-
-  $ twistd -noy examples/server.tac
 
 
 Running Tests
@@ -30,7 +25,8 @@ Running Tests
 
 To run tests::
 
-  $ trial kademlia
+  $ pip install -r dev-requirements.txt
+  $ python -m unittest
 
 
 Fidelity to Original Paper

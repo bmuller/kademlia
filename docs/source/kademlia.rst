@@ -11,14 +11,6 @@ kademlia.crawling module
     :undoc-members:
     :show-inheritance:
 
-kademlia.log module
--------------------
-
-.. automodule:: kademlia.log
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 kademlia.network module
 -----------------------
 
