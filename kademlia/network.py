@@ -18,26 +18,27 @@ log = logging.getLogger(__name__)
 
 class Server(object):
     """
-    High level view of a node instance.  This is the object that should be created
-    to start listening as an active node on the network.
+    High level view of a node instance.  This is the object that should be
+    created to start listening as an active node on the network.
     """
 
     protocol_class = KademliaProtocol
 
-    def __init__(self, ksize=20, alpha=3, id=None, storage=None):
+    def __init__(self, ksize=20, alpha=3, node_id=None, storage=None):
         """
         Create a server instance.  This will start listening on the given port.
 
         Args:
             ksize (int): The k parameter from the paper
             alpha (int): The alpha parameter from the paper
-            id: The id for this node on the network.
-            storage: An instance that implements :interface:`~kademlia.storage.IStorage`
+            node_id: The id for this node on the network.
+            storage: An instance that implements
+                     :interface:`~kademlia.storage.IStorage`
         """
         self.ksize = ksize
         self.alpha = alpha
         self.storage = storage or ForgetfulStorage()
-        self.node = Node(id or digest(random.getrandbits(255)))
+        self.node = Node(node_id or digest(random.getrandbits(255)))
         self.transport = None
         self.protocol = None
         self.refresh_loop = None
@@ -53,16 +54,20 @@ class Server(object):
         if self.save_state_loop:
             self.save_state_loop.cancel()
 
+    def _create_protocol(self):
+        return self.protocol_class(self.node, self.storage, self.ksize)
+
     def listen(self, port, interface='0.0.0.0'):
         """
         Start listening on the given port.
 
         Provide interface="::" to accept ipv6 address
         """
-        proto_factory = lambda: self.protocol_class(self.node, self.storage, self.ksize)
         loop = asyncio.get_event_loop()
-        listen = loop.create_datagram_endpoint(proto_factory, local_addr=(interface, port))
-        log.info("Node %i listening on %s:%i", self.node.long_id, interface, port)
+        listen = loop.create_datagram_endpoint(self._create_protocol,
+                                               local_addr=(interface, port))
+        log.info("Node %i listening on %s:%i",
+                 self.node.long_id, interface, port)
         self.transport, self.protocol = loop.run_until_complete(listen)
         # finally, schedule refreshing table
         self.refresh_table()
@@ -79,10 +84,11 @@ class Server(object):
         (per section 2.3 of the paper).
         """
         ds = []
-        for id in self.protocol.getRefreshIDs():
-            node = Node(id)
+        for node_id in self.protocol.getRefreshIDs():
+            node = Node(node_id)
             nearest = self.protocol.router.findNeighbors(node, self.alpha)
-            spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
+            spider = NodeSpiderCrawl(self.protocol, node, nearest,
+                                     self.ksize, self.alpha)
             ds.append(spider.find())
 
         # do our crawling
@@ -90,12 +96,12 @@ class Server(object):
 
         # now republish keys older than one hour
         for dkey, value in self.storage.iteritemsOlderThan(3600):
-            await self.digest_set(dkey, value)
+            await self.set_digest(dkey, value)
 
     def bootstrappableNeighbors(self):
         """
-        Get a :class:`list` of (ip, port) :class:`tuple` pairs suitable for use as an argument
-        to the bootstrap method.
+        Get a :class:`list` of (ip, port) :class:`tuple` pairs suitable for
+        use as an argument to the bootstrap method.
 
         The server should have been bootstrapped
         already - this is just a utility for getting some neighbors and then
@@ -103,42 +109,28 @@ class Server(object):
         back up, the list of nodes can be used to bootstrap.
         """
         neighbors = self.protocol.router.findNeighbors(self.node)
-        return [ tuple(n)[-2:] for n in neighbors ]
+        return [tuple(n)[-2:] for n in neighbors]
 
     async def bootstrap(self, addrs):
         """
         Bootstrap the server by connecting to other known nodes in the network.
 
         Args:
-            addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP addresses
-                   are acceptable - hostnames will cause an error.
+            addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP
+                   addresses are acceptable - hostnames will cause an error.
         """
-        log.debug("Attempting to bootstrap node with %i initial contacts", len(addrs))
+        log.debug("Attempting to bootstrap node with %i initial contacts",
+                  len(addrs))
         cos = list(map(self.bootstrap_node, addrs))
-        nodes = [node for node in await asyncio.gather(*cos) if not node is None]
-        spider = NodeSpiderCrawl(self.protocol, self.node, nodes, self.ksize, self.alpha)
+        gathered = await asyncio.gather(*cos)
+        nodes = [node for node in gathered if node is not None]
+        spider = NodeSpiderCrawl(self.protocol, self.node, nodes,
+                                 self.ksize, self.alpha)
         return await spider.find()
-            
+
     async def bootstrap_node(self, addr):
         result = await self.protocol.ping(addr, self.node.id)
         return Node(result[1], addr[0], addr[1]) if result[0] else None
-
-    def inetVisibleIP(self):
-        """
-        Get the internet visible IP's of this node as other nodes see it.
-
-        Returns:
-            A `list` of IP's.  If no one can be contacted, then the `list` will be empty.
-        """
-        def handle(results):
-            ips = [ result[1][0] for result in results if result[0] ]
-            log.debug("other nodes think our ip is %s" % str(ips))
-            return ips
-
-        ds = []
-        for neighbor in self.bootstrappableNeighbors():
-            ds.append(self.protocol.stun(neighbor))
-        return defer.gatherResults(ds).addCallback(handle)
 
     async def get(self, key):
         """
@@ -155,36 +147,41 @@ class Server(object):
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            log.warning("There are no known neighbors to get key %s" % key)
+            log.warning("There are no known neighbors to get key %s", key)
             return None
-        spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
+        spider = ValueSpiderCrawl(self.protocol, node, nearest,
+                                  self.ksize, self.alpha)
         return await spider.find()
 
     async def set(self, key, value):
         """
         Set the given string key to the given value in the network.
         """
-        log.info("setting '%s' = '%s' on network" % (key, value))
+        log.info("setting '%s' = '%s' on network", key, value)
         dkey = digest(key)
         return await self.set_digest(dkey, value)
 
     async def set_digest(self, dkey, value):
         """
-        Set the given SHA1 digest key (bytes) to the given value in the network.
+        Set the given SHA1 digest key (bytes) to the given value in the
+        network.
         """
         node = Node(dkey)
 
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            log.warning("There are no known neighbors to set key %s" % dkey.hex())
+            log.warning("There are no known neighbors to set key %s",
+                        dkey.hex())
             return False
 
-        spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
+        spider = NodeSpiderCrawl(self.protocol, node, nearest,
+                                 self.ksize, self.alpha)
         nodes = await spider.find()
-        log.info("setting '%s' on %s" % (dkey.hex(), list(map(str, nodes))))
+        log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
 
         # if this node is close too, then store here as well
-        if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
+        biggest = max([n.distanceTo(node) for n in nodes])
+        if self.node.distanceTo(node) < biggest:
             self.storage[dkey] = value
         ds = [self.protocol.callStore(n, dkey, value) for n in nodes]
         # return true only if at least one store call succeeded
@@ -196,10 +193,12 @@ class Server(object):
         to a cache file with the given fname.
         """
         log.info("Saving state to %s", fname)
-        data = { 'ksize': self.ksize,
-                 'alpha': self.alpha,
-                 'id': self.node.id,
-                 'neighbors': self.bootstrappableNeighbors() }
+        data = {
+            'ksize': self.ksize,
+            'alpha': self.alpha,
+            'id': self.node.id,
+            'neighbors': self.bootstrappableNeighbors()
+        }
         if len(data['neighbors']) == 0:
             log.warning("No known neighbors, so not writing to cache.")
             return
@@ -232,4 +231,7 @@ class Server(object):
         """
         self.saveState(fname)
         loop = asyncio.get_event_loop()
-        self.save_state_loop = loop.call_later(frequency, self.saveStateRegularly, fname, frequency)
+        self.save_state_loop = loop.call_later(frequency,
+                                               self.saveStateRegularly,
+                                               fname,
+                                               frequency)

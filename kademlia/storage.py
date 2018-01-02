@@ -9,31 +9,32 @@ class IStorage:
     Local storage for this node.
     """
 
-    def __setitem__(key, value):
+    def __setitem__(self, key, value):
         """
         Set a key to the given value.
         """
         raise NotImplementedError
 
-    def __getitem__(key):
+    def __getitem__(self, key):
         """
         Get the given key.  If item doesn't exist, raises C{KeyError}
         """
         raise NotImplementedError
 
-    def get(key, default=None):
+    def get(self, key, default=None):
         """
         Get given key.  If not found, return default.
         """
         raise NotImplementedError
 
-    def iteritemsOlderThan(secondsOld):
+    def iteritemsOlderThan(self, secondsOld):
         """
-        Return the an iterator over (key, value) tuples for items older than the given secondsOld.
+        Return the an iterator over (key, value) tuples for items older
+        than the given secondsOld.
         """
         raise NotImplementedError
 
-    def iteritems():
+    def __iter__(self):
         """
         Get the iterator for this storage, should yield tuple of (key, value)
         """
@@ -55,7 +56,7 @@ class ForgetfulStorage(IStorage):
         self.cull()
 
     def cull(self):
-        for k, v in self.iteritemsOlderThan(self.ttl):
+        for _, _ in self.iteritemsOlderThan(self.ttl):
             self.data.popitem(last=False)
 
     def get(self, key, default=None):

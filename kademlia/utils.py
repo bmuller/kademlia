@@ -20,7 +20,8 @@ def digest(s):
 
 class OrderedSet(list):
     """
-    Acts like a list in all ways, except in the behavior of the :meth:`push` method.
+    Acts like a list in all ways, except in the behavior of the
+    :meth:`push` method.
     """
 
     def push(self, thing):
@@ -51,6 +52,6 @@ def sharedPrefix(args):
     return args[0][:i]
 
 
-def bytesToBitString(bytes):
-    bits = [bin(byte)[2:].rjust(8, '0') for byte in bytes]
+def bytesToBitString(bites):
+    bits = [bin(bite)[2:].rjust(8, '0') for bite in bites]
     return "".join(bits)

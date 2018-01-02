@@ -65,14 +65,15 @@ class KBucket(object):
         return True
 
     def depth(self):
-        sp = sharedPrefix([bytesToBitString(n.id) for n in self.nodes.values()])
+        vals = self.nodes.values()
+        sp = sharedPrefix([bytesToBitString(n.id) for n in vals])
         return len(sp)
 
     def head(self):
         return list(self.nodes.values())[0]
 
-    def __getitem__(self, id):
-        return self.nodes.get(id, None)
+    def __getitem__(self, node_id):
+        return self.nodes.get(node_id, None)
 
     def __len__(self):
         return len(self.nodes)
@@ -135,7 +136,8 @@ class RoutingTable(object):
         Get all of the buckets that haven't been updated in over
         an hour.
         """
-        return [b for b in self.buckets if b.lastUpdated < (time.time() - 3600)]
+        hrago = time.time() - 3600
+        return [b for b in self.buckets if b.lastUpdated < hrago]
 
     def removeContact(self, node):
         index = self.getBucketFor(node)
@@ -153,8 +155,8 @@ class RoutingTable(object):
         if bucket.addNode(node):
             return
 
-        # Per section 4.2 of paper, split if the bucket has the node in its range
-        # or if the depth is not congruent to 0 mod 5
+        # Per section 4.2 of paper, split if the bucket has the node
+        # in its range or if the depth is not congruent to 0 mod 5
         if bucket.hasInRange(self.node) or bucket.depth() % 5 != 0:
             self.splitBucket(index)
             self.addContact(node)
@@ -173,7 +175,8 @@ class RoutingTable(object):
         k = k or self.ksize
         nodes = []
         for neighbor in TableTraverser(self, node):
-            if neighbor.id != node.id and (exclude is None or not neighbor.sameHomeAs(exclude)):
+            notexcluded = exclude is None or not neighbor.sameHomeAs(exclude)
+            if neighbor.id != node.id and notexcluded:
                 heapq.heappush(nodes, (node.distanceTo(neighbor), neighbor))
             if len(nodes) == k:
                 break

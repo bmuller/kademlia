@@ -8,8 +8,9 @@ class SwappableProtocolTests(unittest.TestCase):
 
     def test_default_protocol(self):
         """
-        An ordinary Server object will initially not have a protocol, but will have a KademliaProtocol
-        object as its protocol after its listen() method is called.
+        An ordinary Server object will initially not have a protocol, but will
+        have a KademliaProtocol object as its protocol after its listen()
+        method is called.
         """
         server = Server()
         self.assertIsNone(server.protocol)
@@ -19,8 +20,9 @@ class SwappableProtocolTests(unittest.TestCase):
 
     def test_custom_protocol(self):
         """
-        A subclass of Server which overrides the protocol_class attribute will have an instance
-        of that class as its protocol after its listen() method is called.
+        A subclass of Server which overrides the protocol_class attribute will
+        have an instance of that class as its protocol after its listen()
+        method is called.
         """
 
         # Make a custom Protocol and Server to go with hit.
@@ -40,4 +42,4 @@ class SwappableProtocolTests(unittest.TestCase):
         husk_server = HuskServer()
         husk_server.listen(8469)
         self.assertIsInstance(husk_server.protocol, CoconutProtocol)
-        server.stop()
+        husk_server.stop()

@@ -17,8 +17,10 @@ class SpiderCrawl(object):
 
         Args:
             protocol: A :class:`~kademlia.protocol.KademliaProtocol` instance.
-            node: A :class:`~kademlia.node.Node` representing the key we're looking for
-            peers: A list of :class:`~kademlia.node.Node` instances that provide the entry point for the network
+            node: A :class:`~kademlia.node.Node` representing the key we're
+                  looking for
+            peers: A list of :class:`~kademlia.node.Node` instances that
+                   provide the entry point for the network
             ksize: The value for k based on the paper
             alpha: The value for alpha based on the paper
         """
@@ -28,9 +30,8 @@ class SpiderCrawl(object):
         self.node = node
         self.nearest = NodeHeap(self.node, self.ksize)
         self.lastIDsCrawled = []
-        log.info("creating spider with peers: %s" % peers)
+        log.info("creating spider with peers: %s", peers)
         self.nearest.push(peers)
-
 
     async def _find(self, rpcmethod):
         """
@@ -42,16 +43,15 @@ class SpiderCrawl(object):
         The process:
           1. calls find_* to current ALPHA nearest not already queried nodes,
              adding results to current nearest list of k nodes.
-          2. current nearest list needs to keep track of who has been queried already
-             sort by nearest, keep KSIZE
+          2. current nearest list needs to keep track of who has been queried
+             already sort by nearest, keep KSIZE
           3. if list is same as last time, next call should be to everyone not
              yet queried
           4. repeat, unless nearest list has all been queried, then ur done
         """
-        log.info("crawling with nearest: %s" % str(tuple(self.nearest)))
+        log.info("crawling network with nearest: %s", str(tuple(self.nearest)))
         count = self.alpha
         if self.nearest.getIDs() == self.lastIDsCrawled:
-            log.info("last iteration same as current - checking all in list now")
             count = len(self.nearest)
         self.lastIDsCrawled = self.nearest.getIDs()
 
@@ -61,6 +61,9 @@ class SpiderCrawl(object):
             self.nearest.markContacted(peer)
         found = await gather_dict(ds)
         return await self._nodesFound(found)
+
+    async def _nodesFound(self, responses):
+        raise NotImplementedError
 
 
 class ValueSpiderCrawl(SpiderCrawl):
@@ -110,8 +113,8 @@ class ValueSpiderCrawl(SpiderCrawl):
         """
         valueCounts = Counter(values)
         if len(valueCounts) != 1:
-            args = (self.node.long_id, str(values))
-            log.warning("Got multiple values for key %i: %s" % args)
+            log.warning("Got multiple values for key %i: %s",
+                        self.node.long_id, str(values))
         value = valueCounts.most_common(1)[0][0]
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
