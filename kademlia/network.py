@@ -4,7 +4,7 @@ Package for interacting on the network at a high level.
 import random
 import pickle
 import asyncio
-from logging import getLogger
+import logging
 
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import digest
@@ -12,6 +12,8 @@ from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
+
+log = logging.getLogger(__name__)
 
 
 class Server(object):
@@ -34,7 +36,6 @@ class Server(object):
         """
         self.ksize = ksize
         self.alpha = alpha
-        self.log = getLogger("kademlia-server")
         self.storage = storage or ForgetfulStorage()
         self.node = Node(id or digest(random.getrandbits(255)))
         self.transport = None
@@ -61,11 +62,13 @@ class Server(object):
         proto_factory = lambda: self.protocol_class(self.node, self.storage, self.ksize)
         loop = asyncio.get_event_loop()
         listen = loop.create_datagram_endpoint(proto_factory, local_addr=(interface, port))
+        log.info("Node %i listening on %s:%i", self.node.long_id, interface, port)
         self.transport, self.protocol = loop.run_until_complete(listen)
         # finally, schedule refreshing table
         self.refresh_table()
 
     def refresh_table(self):
+        log.debug("Refreshing routing table")
         asyncio.ensure_future(self._refresh_table())
         loop = asyncio.get_event_loop()
         self.refresh_loop = loop.call_later(3600, self.refresh_table)
@@ -110,6 +113,7 @@ class Server(object):
             addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP addresses
                    are acceptable - hostnames will cause an error.
         """
+        log.debug("Attempting to bootstrap node with %i initial contacts", len(addrs))
         cos = list(map(self.bootstrap_node, addrs))
         nodes = [node for node in await asyncio.gather(*cos) if not node is None]
         spider = NodeSpiderCrawl(self.protocol, self.node, nodes, self.ksize, self.alpha)
@@ -128,7 +132,7 @@ class Server(object):
         """
         def handle(results):
             ips = [ result[1][0] for result in results if result[0] ]
-            self.log.debug("other nodes think our ip is %s" % str(ips))
+            log.debug("other nodes think our ip is %s" % str(ips))
             return ips
 
         ds = []
@@ -143,6 +147,7 @@ class Server(object):
         Returns:
             :class:`None` if not found, the value otherwise.
         """
+        log.info("Looking up key %s", key)
         dkey = digest(key)
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
@@ -150,7 +155,7 @@ class Server(object):
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            self.log.warning("There are no known neighbors to get key %s" % key)
+            log.warning("There are no known neighbors to get key %s" % key)
             return None
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return await spider.find()
@@ -159,7 +164,7 @@ class Server(object):
         """
         Set the given string key to the given value in the network.
         """
-        self.log.debug("setting '%s' = '%s' on network" % (key, value))
+        log.info("setting '%s' = '%s' on network" % (key, value))
         dkey = digest(key)
         return await self.set_digest(dkey, value)
 
@@ -171,12 +176,12 @@ class Server(object):
 
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
-            self.log.warning("There are no known neighbors to set key %s" % dkey.hex())
+            log.warning("There are no known neighbors to set key %s" % dkey.hex())
             return False
 
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         nodes = await spider.find()
-        self.log.info("setting '%s' on %s" % (dkey.hex(), list(map(str, nodes))))
+        log.info("setting '%s' on %s" % (dkey.hex(), list(map(str, nodes))))
 
         # if this node is close too, then store here as well
         if self.node.distanceTo(node) < max([n.distanceTo(node) for n in nodes]):
@@ -190,12 +195,13 @@ class Server(object):
         Save the state of this node (the alpha/ksize/id/immediate neighbors)
         to a cache file with the given fname.
         """
+        log.info("Saving state to %s", fname)
         data = { 'ksize': self.ksize,
                  'alpha': self.alpha,
                  'id': self.node.id,
                  'neighbors': self.bootstrappableNeighbors() }
         if len(data['neighbors']) == 0:
-            self.log.warning("No known neighbors, so not writing to cache.")
+            log.warning("No known neighbors, so not writing to cache.")
             return
         with open(fname, 'wb') as f:
             pickle.dump(data, f)
@@ -206,6 +212,7 @@ class Server(object):
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
         """
+        log.info("Loading state from %s", fname)
         with open(fname, 'rb') as f:
             data = pickle.load(f)
         s = Server(data['ksize'], data['alpha'], data['id'])

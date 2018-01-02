@@ -1,12 +1,14 @@
 import random
 import asyncio
-from logging import getLogger
+import logging
 
 from rpcudp.protocol import RPCProtocol
 
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
 from kademlia.utils import digest
+
+log = logging.getLogger(__name__)
 
 
 class KademliaProtocol(RPCProtocol):
@@ -15,7 +17,6 @@ class KademliaProtocol(RPCProtocol):
         self.router = RoutingTable(self, ksize, sourceNode)
         self.storage = storage
         self.sourceNode = sourceNode
-        self.log = getLogger("kademlia-protocol")
 
     def getRefreshIDs(self):
         """
@@ -37,12 +38,12 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
-        self.log.debug("got a store request from %s, storing value" % str(sender))
+        log.debug("got a store request from %s, storing '%s'='%s'", sender, key.hex(), value)
         self.storage[key] = value
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
-        self.log.info("finding neighbors of %i in local table" % int(nodeid.hex(), 16))
+        log.info("finding neighbors of %i in local table", int(nodeid.hex(), 16))
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
         node = Node(key)
@@ -93,7 +94,7 @@ class KademliaProtocol(RPCProtocol):
         if not self.router.isNewNode(node):
             return
 
-        self.log.info("never seen %s before, adding to router and setting nearby " % node)
+        log.info("never seen %s before, adding to router", node)
         for key, value in self.storage.items():
             keynode = Node(digest(key))
             neighbors = self.router.findNeighbors(keynode)
@@ -110,10 +111,10 @@ class KademliaProtocol(RPCProtocol):
         we get no response, make sure it's removed from the routing table.
         """
         if not result[0]:
-            self.log.warning("no response from %s, removing from router" % node)
+            log.warning("no response from %s, removing from router", node)
             self.router.removeContact(node)
             return result
         
-        self.log.info("got successful response from %s")
+        log.info("got successful response from %s", node)
         self.welcomeIfNewNode(node)
         return result

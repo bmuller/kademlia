@@ -8,7 +8,13 @@ if len(sys.argv) != 3:
     print("Usage: python set.py <key> <value>")
     sys.exit(1)
 
-logging.basicConfig(level=logging.DEBUG)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+log = logging.getLogger('kademlia')
+log.addHandler(handler)
+log.setLevel(logging.DEBUG)
+
 loop = asyncio.get_event_loop()
 loop.set_debug(True)
 

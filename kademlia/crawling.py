@@ -1,8 +1,10 @@
 from collections import Counter
-from logging import getLogger
+import logging
 
 from kademlia.node import Node, NodeHeap
 from kademlia.utils import gather_dict
+
+log = logging.getLogger(__name__)
 
 
 class SpiderCrawl(object):
@@ -26,8 +28,7 @@ class SpiderCrawl(object):
         self.node = node
         self.nearest = NodeHeap(self.node, self.ksize)
         self.lastIDsCrawled = []
-        self.log = getLogger("kademlia-spider")
-        self.log.info("creating spider with peers: %s" % peers)
+        log.info("creating spider with peers: %s" % peers)
         self.nearest.push(peers)
 
 
@@ -47,10 +48,10 @@ class SpiderCrawl(object):
              yet queried
           4. repeat, unless nearest list has all been queried, then ur done
         """
-        self.log.info("crawling with nearest: %s" % str(tuple(self.nearest)))
+        log.info("crawling with nearest: %s" % str(tuple(self.nearest)))
         count = self.alpha
         if self.nearest.getIDs() == self.lastIDsCrawled:
-            self.log.info("last iteration same as current - checking all in list now")
+            log.info("last iteration same as current - checking all in list now")
             count = len(self.nearest)
         self.lastIDsCrawled = self.nearest.getIDs()
 
@@ -110,7 +111,7 @@ class ValueSpiderCrawl(SpiderCrawl):
         valueCounts = Counter(values)
         if len(valueCounts) != 1:
             args = (self.node.long_id, str(values))
-            self.log.warning("Got multiple values for key %i: %s" % args)
+            log.warning("Got multiple values for key %i: %s" % args)
         value = valueCounts.most_common(1)[0][0]
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
