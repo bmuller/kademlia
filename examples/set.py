@@ -4,8 +4,8 @@ import sys
 
 from kademlia.network import Server
 
-if len(sys.argv) != 3:
-    print("Usage: python set.py <key> <value>")
+if len(sys.argv) != 5:
+    print("Usage: python set.py <bootstrap node> <bootstrap port> <key> <value>")
     sys.exit(1)
 
 handler = logging.StreamHandler()
@@ -20,7 +20,8 @@ loop.set_debug(True)
 
 server = Server()
 server.listen(8469)
-loop.run_until_complete(server.bootstrap([("127.0.0.1", 8468)]))
-loop.run_until_complete(server.set(sys.argv[1], sys.argv[2]))
+bootstrap_node = (sys.argv[1], int(sys.argv[2]))
+loop.run_until_complete(server.bootstrap([bootstrap_node]))
+loop.run_until_complete(server.set(sys.argv[3], sys.argv[4]))
 server.stop()
 loop.close()
