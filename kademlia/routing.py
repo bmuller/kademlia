@@ -16,7 +16,7 @@ class KBucket(object):
         self.ksize = ksize
 
     def touchLastUpdated(self):
-        self.lastUpdated = time.time()
+        self.lastUpdated = time.monotonic()
 
     def getNodes(self):
         return list(self.nodes.values())
@@ -136,7 +136,7 @@ class RoutingTable(object):
         Get all of the buckets that haven't been updated in over
         an hour.
         """
-        hrago = time.time() - 3600
+        hrago = time.monotonic() - 3600
         return [b for b in self.buckets if b.lastUpdated < hrago]
 
     def removeContact(self, node):
