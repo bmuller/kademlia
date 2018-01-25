@@ -52,7 +52,7 @@ class ForgetfulStorage(IStorage):
     def __setitem__(self, key, value):
         if key in self.data:
             del self.data[key]
-        self.data[key] = (time.time(), value)
+        self.data[key] = (time.monotonic(), value)
         self.cull()
 
     def cull(self):
@@ -78,7 +78,7 @@ class ForgetfulStorage(IStorage):
         return repr(self.data)
 
     def iteritemsOlderThan(self, secondsOld):
-        minBirthday = time.time() - secondsOld
+        minBirthday = time.monotonic() - secondsOld
         zipped = self._tripleIterable()
         matches = takewhile(lambda r: minBirthday >= r[1], zipped)
         return list(map(operator.itemgetter(0, 2), matches))
