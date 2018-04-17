@@ -7,6 +7,10 @@ from collections import OrderedDict
 class IStorage:
     """
     Local storage for this node.
+    IStorage implementations must store and return values as a key value pair.
+    IStorage special behavior (ie: appending to a list instead of setting) must
+    work in only special cases as the default case (key,value pair) is required
+    for the DHT's functioning.
     """
 
     def __setitem__(self, key, value):
