@@ -157,6 +157,10 @@ class Server(object):
         """
         Set the given string key to the given value in the network.
         """
+        if not check_dht_value_type(value):
+            raise TypeError(
+                "Value must be of type int, float, bool, str, or bytes"
+            )
         log.info("setting '%s' = '%s' on network", key, value)
         dkey = digest(key)
         return await self.set_digest(dkey, value)
@@ -235,3 +239,20 @@ class Server(object):
                                                self.saveStateRegularly,
                                                fname,
                                                frequency)
+
+
+def check_dht_value_type(value):
+    """
+    Checks to see if the type of the value is a valid type for
+    placing in the dht.
+    """
+    typeset = set(
+        [
+            int,
+            float,
+            bool,
+            str,
+            bytes,
+        ]
+    )
+    return type(value) in typeset
