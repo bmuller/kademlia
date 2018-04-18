@@ -8,9 +8,6 @@ class IStorage:
     """
     Local storage for this node.
     IStorage implementations of get must return the same type as put in by set
-    For example: if and IStorage implementation appends to list instead of
-    replacing the value, it must return one of those list values and not the
-    whole list.
     """
 
     def __setitem__(self, key, value):
