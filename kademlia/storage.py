@@ -7,6 +7,7 @@ from collections import OrderedDict
 class IStorage:
     """
     Local storage for this node.
+    IStorage implementations of get must return the same type as put in by set
     """
 
     def __setitem__(self, key, value):
