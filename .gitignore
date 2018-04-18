@@ -4,7 +4,6 @@ _trial_temp
 apidoc
 *.pyc
 build
-.ropeproject
 dist
 kademlia.egg-info
 docs/_build
