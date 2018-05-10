@@ -24,7 +24,14 @@ class Server(object):
 
     protocol_class = KademliaProtocol
 
-    def __init__(self, ksize=20, alpha=3, node_id=None, storage=None):
+    def __init__(
+        self,
+        ksize=20,
+        alpha=3,
+        node_id=None,
+        storage=None,
+        custom_event_loop=None
+    ):
         """
         Create a server instance.  This will start listening on the given port.
 
@@ -43,6 +50,13 @@ class Server(object):
         self.protocol = None
         self.refresh_loop = None
         self.save_state_loop = None
+        self.custom_event_loop = custom_event_loop
+
+    def get_event_loop(self):
+        if self.custom_event_loop is None:
+            return asyncio.get_event_loop()
+        else:
+            return self.custom_event_loop
 
     def stop(self):
         if self.transport is not None:
@@ -55,7 +69,12 @@ class Server(object):
             self.save_state_loop.cancel()
 
     def _create_protocol(self):
-        return self.protocol_class(self.node, self.storage, self.ksize)
+        return self.protocol_class(
+            self.node,
+            self.storage,
+            self.ksize,
+            self.get_event_loop()
+        )
 
     def listen(self, port, interface='0.0.0.0'):
         """
@@ -63,7 +82,7 @@ class Server(object):
 
         Provide interface="::" to accept ipv6 address
         """
-        loop = asyncio.get_event_loop()
+        loop = self.get_event_loop()
         listen = loop.create_datagram_endpoint(self._create_protocol,
                                                local_addr=(interface, port))
         log.info("Node %i listening on %s:%i",
@@ -74,8 +93,11 @@ class Server(object):
 
     def refresh_table(self):
         log.debug("Refreshing routing table")
-        asyncio.ensure_future(self._refresh_table())
-        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(
+            self._refresh_table(),
+            loop=self.get_event_loop()
+        )
+        loop = self.get_event_loop()
         self.refresh_loop = loop.call_later(3600, self.refresh_table)
 
     async def _refresh_table(self):
@@ -92,7 +114,7 @@ class Server(object):
             ds.append(spider.find())
 
         # do our crawling
-        await asyncio.gather(*ds)
+        await asyncio.gather(*ds, loop=self.get_event_loop())
 
         # now republish keys older than one hour
         for dkey, value in self.storage.iteritemsOlderThan(3600):
@@ -122,7 +144,7 @@ class Server(object):
         log.debug("Attempting to bootstrap node with %i initial contacts",
                   len(addrs))
         cos = list(map(self.bootstrap_node, addrs))
-        gathered = await asyncio.gather(*cos)
+        gathered = await asyncio.gather(*cos, loop=self.get_event_loop())
         nodes = [node for node in gathered if node is not None]
         spider = NodeSpiderCrawl(self.protocol, self.node, nodes,
                                  self.ksize, self.alpha)
@@ -189,7 +211,7 @@ class Server(object):
             self.storage[dkey] = value
         ds = [self.protocol.callStore(n, dkey, value) for n in nodes]
         # return true only if at least one store call succeeded
-        return any(await asyncio.gather(*ds))
+        return any(await asyncio.gather(*ds, loop=self.get_event_loop()))
 
     def saveState(self, fname):
         """
@@ -234,7 +256,7 @@ class Server(object):
                         By default, 10 minutes.
         """
         self.saveState(fname)
-        loop = asyncio.get_event_loop()
+        loop = self.get_event_loop()
         self.save_state_loop = loop.call_later(frequency,
                                                self.saveStateRegularly,
                                                fname,

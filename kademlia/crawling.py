@@ -59,7 +59,7 @@ class SpiderCrawl(object):
         for peer in self.nearest.getUncontacted()[:count]:
             ds[peer.id] = rpcmethod(peer, self.node)
             self.nearest.markContacted(peer)
-        found = await gather_dict(ds)
+        found = await gather_dict(ds, self.protocol.event_loop)
         return await self._nodesFound(found)
 
     async def _nodesFound(self, responses):

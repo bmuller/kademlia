@@ -12,11 +12,12 @@ log = logging.getLogger(__name__)
 
 
 class KademliaProtocol(RPCProtocol):
-    def __init__(self, sourceNode, storage, ksize):
+    def __init__(self, sourceNode, storage, ksize, event_loop):
         RPCProtocol.__init__(self)
         self.router = RoutingTable(self, ksize, sourceNode)
         self.storage = storage
         self.sourceNode = sourceNode
+        self.event_loop = event_loop
 
     def getRefreshIDs(self):
         """
@@ -110,7 +111,10 @@ class KademliaProtocol(RPCProtocol):
                 first = neighbors[0].distanceTo(keynode)
                 thisNodeClosest = self.sourceNode.distanceTo(keynode) < first
             if len(neighbors) == 0 or (newNodeClose and thisNodeClosest):
-                asyncio.ensure_future(self.callStore(node, key, value))
+                asyncio.ensure_future(
+                    self.callStore(node, key, value),
+                    loop=self.event_loop,
+                )
         self.router.addContact(node)
 
     def handleCallResponse(self, result, node):

@@ -161,7 +161,10 @@ class RoutingTable(object):
             self.splitBucket(index)
             self.addContact(node)
         else:
-            asyncio.ensure_future(self.protocol.callPing(bucket.head()))
+            asyncio.ensure_future(
+                self.protocol.callPing(bucket.head()),
+                loop=self.protocol.event_loop,
+            )
 
     def getBucketFor(self, node):
         """

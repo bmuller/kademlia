@@ -6,9 +6,9 @@ import operator
 import asyncio
 
 
-async def gather_dict(d):
+async def gather_dict(d, event_loop):
     cors = list(d.values())
-    results = await asyncio.gather(*cors)
+    results = await asyncio.gather(*cors, loop=event_loop)
     return dict(zip(d.keys(), results))
 
 
