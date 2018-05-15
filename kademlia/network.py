@@ -53,10 +53,9 @@ class Server(object):
         self.custom_event_loop = custom_event_loop
 
     def get_event_loop(self):
-        if self.custom_event_loop is None:
+        if not self.custom_event_loop:
             return asyncio.get_event_loop()
-        else:
-            return self.custom_event_loop
+        return self.custom_event_loop
 
     def stop(self):
         if self.transport is not None:
