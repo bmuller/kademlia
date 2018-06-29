@@ -1,6 +1,6 @@
 import unittest
 
-from kademlia.routing import KBucket
+from kademlia.routing import KBucket, TableTraverser
 from kademlia.tests.utils import mknode, FakeProtocol
 
 
@@ -49,3 +49,38 @@ class RoutingTableTest(unittest.TestCase):
         self.router.addContact(mknode())
         self.assertTrue(len(self.router.buckets), 1)
         self.assertTrue(len(self.router.buckets[0].nodes), 1)
+
+
+class TableTraverserTest(unittest.TestCase):
+    def setUp(self):
+        self.id = mknode().id
+        self.protocol = FakeProtocol(self.id)
+        self.router = self.protocol.router
+
+    def test_iteration(self):
+        """
+        Make 10 nodes, 5 buckets, two nodes add to one bucket in order,
+        All buckets: [node0, node1], [node2, node3], [node4, node5],
+                     [node6, node7], [node8, node9]
+        Test traver result starting from node4.
+        """
+
+        nodes = [mknode(intid=x) for x in range(10)]
+
+        buckets = []
+        for i in range(5):
+            bucket = KBucket(2 * i, 2 * i + 1, 2)
+            bucket.addNode(nodes[2 * i])
+            bucket.addNode(nodes[2 * i + 1])
+            buckets.append(bucket)
+
+        # replace router's bucket with our test buckets
+        self.router.buckets = buckets
+
+        # expected nodes order
+        expected_nodes = [nodes[5], nodes[4], nodes[3], nodes[2], nodes[7],
+                          nodes[6], nodes[1], nodes[0], nodes[9], nodes[8]]
+
+        start_node = nodes[4]
+        for index, node in enumerate(TableTraverser(self.router, start_node)):
+            self.assertEqual(node, expected_nodes[index])

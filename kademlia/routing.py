@@ -104,7 +104,7 @@ class TableTraverser(object):
             return next(self)
 
         if len(self.rightBuckets) > 0:
-            self.currentNodes = self.rightBuckets.pop().getNodes()
+            self.currentNodes = self.rightBuckets.pop(0).getNodes()
             self.left = True
             return next(self)
 
