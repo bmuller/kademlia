@@ -1,45 +1,91 @@
 import time
-from itertools import takewhile
+import json
 import operator
+from itertools import takewhile
 from collections import OrderedDict
+
+DATA_PATH = 'data/'
+KEYS_STORE = 'keys.json'
 
 
 class IStorage:
-    """
-    Local storage for this node.
-    IStorage implementations of get must return the same type as put in by set
-    """
+    def __init__(self):
+        self.i = 0
+        self.keys = OrderedDict()
+        self.initKeys()
 
     def __setitem__(self, key, value):
-        """
-        Set a key to the given value.
-        """
-        raise NotImplementedError
-
-    def __getitem__(self, key):
-        """
-        Get the given key.  If item doesn't exist, raises C{KeyError}
-        """
-        raise NotImplementedError
+        if key in self.keys:
+            del self.keys[key]
+        self.keys[key] = int(time.time())
+        with open(KEYS_STORE, 'w') as outfile:
+            json.dump(self.convertKeysToHex(self.keys), outfile)
+        with open(DATA_PATH + key.hex() + '.json', 'w') as outfile:
+            json.dump(value, outfile)
 
     def get(self, key, default=None):
-        """
-        Get given key.  If not found, return default.
-        """
-        raise NotImplementedError
+        if key in self.keys:
+            return self.readKeyFromJSON(key)
+        return default
 
-    def iteritemsOlderThan(self, secondsOld):
-        """
-        Return the an iterator over (key, value) tuples for items older
-        than the given secondsOld.
-        """
-        raise NotImplementedError
+    def __getitem__(self, key):
+        return self.readKeyFromJSON(key)
+
+    def readKeyFromJSON(self, key):
+        with open(DATA_PATH + key.hex() + '.json') as json_file:
+            return json.load(json_file)
 
     def __iter__(self):
-        """
-        Get the iterator for this storage, should yield tuple of (key, value)
-        """
-        raise NotImplementedError
+        return self
+
+    def next(self):
+        if self.i < len(self.keys):
+            self.i += 1
+            return self.keys.items()[self.i - 1]
+        else:
+            raise StopIteration()
+
+    def __repr__(self):
+        return repr(self.keys)
+
+    def iteritemsOlderThan(self, secondsOld):
+        minBirthday = int(time.time()) - secondsOld
+        zipped = self._tripleIterable()
+        matches = takewhile(lambda r: minBirthday >= r[1], zipped)
+        return list(map(operator.itemgetter(0, 2), matches))
+
+    def _tripleIterable(self):
+        ikeys = self.keys.keys()
+        ibirthday = self.keys.values()
+        ivalues = map(lambda k: self.get(k), self.keys.keys())
+        return zip(ikeys, ibirthday, ivalues)
+
+    def items(self):
+        ikeys = self.keys.keys()
+        ivalues = map(lambda k: self.get(k), self.keys.keys())
+        return zip(ikeys, ivalues)
+
+    def convertKeysToHex(self, data):
+        result = OrderedDict()
+        for key in data:
+            result[key.hex()] = data[key]
+        return result
+
+    def initKeys(self):
+        try:
+            with open(KEYS_STORE) as json_file:
+                try:
+                    data = json.load(json_file)
+                    for key in data:
+                        self.keys[bytes.fromhex(key)] = data[key]
+                except ValueError:
+                    self.createEmptyKeysJSON()
+        except FileNotFoundError:
+            self.createEmptyKeysJSON()
+
+    def createEmptyKeysJSON(self):
+        with open(KEYS_STORE, 'w') as outfile:
+            outfile.write("{}")
 
 
 class ForgetfulStorage(IStorage):
