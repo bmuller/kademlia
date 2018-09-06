@@ -1,52 +1,41 @@
 import time
-import json
 import operator
+import pickledb
 from itertools import takewhile
 from collections import OrderedDict
-
-DATA_PATH = 'data/'
-KEYS_STORE = 'keys.json'
 
 
 class IStorage:
     def __init__(self):
         self.i = 0
-        self.keys = OrderedDict()
-        self.initKeys()
+        self.data = pickledb.load('data.db', False)
 
     def __setitem__(self, key, value):
-        if key in self.keys:
-            del self.keys[key]
-        self.keys[key] = int(time.time())
-        with open(KEYS_STORE, 'w') as outfile:
-            json.dump(self.convertKeysToHex(self.keys), outfile)
-        with open(DATA_PATH + key.hex() + '.json', 'w') as outfile:
-            json.dump(value, outfile)
+        self.data.set(key.hex(), (int(time.time()), value))
+        self.data.dump()
 
     def get(self, key, default=None):
-        if key in self.keys:
-            return self.readKeyFromJSON(key)
+        value = self.data.get(key.hex())
+        if value is not None:
+            return value
         return default
 
     def __getitem__(self, key):
-        return self.readKeyFromJSON(key)
-
-    def readKeyFromJSON(self, key):
-        with open(DATA_PATH + key.hex() + '.json') as json_file:
-            return json.load(json_file)
+        return self.data.get(key.hex())
 
     def __iter__(self):
-        return self
+        return iter(self)
 
     def next(self):
-        if self.i < len(self.keys):
+        keys = self.data.getall()
+        if self.i < len(keys):
             self.i += 1
-            return self.keys.items()[self.i - 1]
+            return self.data.get(keys[self.i - 1])
         else:
             raise StopIteration()
 
     def __repr__(self):
-        return repr(self.keys)
+        return repr(self.data.getall())
 
     def iteritemsOlderThan(self, secondsOld):
         minBirthday = int(time.time()) - secondsOld
@@ -55,37 +44,24 @@ class IStorage:
         return list(map(operator.itemgetter(0, 2), matches))
 
     def _tripleIterable(self):
-        ikeys = self.keys.keys()
-        ibirthday = self.keys.values()
-        ivalues = map(lambda k: self.get(k), self.keys.keys())
+        ikeys = self.getAllKeysBytes()
+        ibirthday = map(operator.itemgetter(0), self.getAllValues())
+        ivalues = map(operator.itemgetter(1), self.getAllValues())
         return zip(ikeys, ibirthday, ivalues)
 
-    def items(self):
-        ikeys = self.keys.keys()
-        ivalues = map(lambda k: self.get(k), self.keys.keys())
-        return zip(ikeys, ivalues)
-
-    def convertKeysToHex(self, data):
-        result = OrderedDict()
-        for key in data:
-            result[key.hex()] = data[key]
+    def getAllValues(self):
+        result = []
+        for key in self.data.getall():
+            result.append(self.data.get(key))
         return result
 
-    def initKeys(self):
-        try:
-            with open(KEYS_STORE) as json_file:
-                try:
-                    data = json.load(json_file)
-                    for key in data:
-                        self.keys[bytes.fromhex(key)] = data[key]
-                except ValueError:
-                    self.createEmptyKeysJSON()
-        except FileNotFoundError:
-            self.createEmptyKeysJSON()
+    def getAllKeysBytes(self):
+        return list(map(lambda k: bytes.fromhex(k), self.data.getall()))
 
-    def createEmptyKeysJSON(self):
-        with open(KEYS_STORE, 'w') as outfile:
-            outfile.write("{}")
+    def items(self):
+        ikeys = self.getAllKeysBytes()
+        ivalues = map(operator.itemgetter(1), self.getAllValues())
+        return zip(ikeys, ivalues)
 
 
 class ForgetfulStorage(IStorage):
