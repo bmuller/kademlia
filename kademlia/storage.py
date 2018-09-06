@@ -15,13 +15,13 @@ class IStorage:
         self.data.dump()
 
     def get(self, key, default=None):
-        value = self.data.get(key.hex())
+        value = self.data.get(key.hex())[1]
         if value is not None:
             return value
         return default
 
     def __getitem__(self, key):
-        return self.data.get(key.hex())
+        return self.data.get(key.hex())[1]
 
     def __iter__(self):
         return iter(self)
