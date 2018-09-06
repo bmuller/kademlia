@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 class IStorage:
     def __init__(self):
-        self.i = 0
         self.data = pickledb.load('data.db', False)
 
     def __setitem__(self, key, value):
@@ -15,24 +14,16 @@ class IStorage:
         self.data.dump()
 
     def get(self, key, default=None):
-        value = self.data.get(key.hex())[1]
+        value = self.data.get(key.hex())
         if value is not None:
-            return value
+            return value[1]
         return default
 
     def __getitem__(self, key):
         return self.data.get(key.hex())[1]
 
     def __iter__(self):
-        return iter(self)
-
-    def next(self):
-        keys = self.data.getall()
-        if self.i < len(keys):
-            self.i += 1
-            return self.data.get(keys[self.i - 1])
-        else:
-            raise StopIteration()
+        return iter(self.items())
 
     def __repr__(self):
         return repr(self.data.getall())
