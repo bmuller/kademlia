@@ -5,6 +5,9 @@ RUN apt-get install -y python3 python3-pip git
 RUN pip3 install asyncio
 RUN pip3 install rpcudp
 RUN pip3 install pickledb
+RUN pip3 install aiohttp
+RUN pip3 install cchardet
+RUN pip3 install aiodns
 
 RUN mkdir /var/dht
 RUN cd /var/dht && git clone https://github.com/iotcoop/eqitii-dht
