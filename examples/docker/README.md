@@ -9,7 +9,7 @@ Then for running containers use next commands:
 
 for first container
 ```
-docker run --name dht1 <hash_of_build_docker_image>
+docker run --name dht1 -p 8080:8080 <hash_of_build_docker_image>
 ```
 
 for each next container
@@ -24,20 +24,17 @@ docker inspect --format '{{ .NetworkSettings.IPAddress }}' dht1
 
 ## Usage
 
-To connect to running container use
-```
-docker exec -it <container_name> bash
-```
-then you will be able to run scripts from the node
+Each container has API for keys get/set running on 8080 port. For dht1 container we used -p 8080:8080 for exposing that port to localhost. So now we are able to use http://localhost:8080 for setting and getting keys.
 
-Files are stored in /var/dht.
+To set key:
+```
+POST http://localhost:8080/dht/<key>
 
-There are sample scripts to add data and to read data.
-To add asset data run
+BODY:
+<value_json>
 ```
-python3 add_asset.py $CONNECT_IP asset1 "{\"type\":\"test\"}"
+
+To get key:
 ```
-To read data run
-```
-python3 add_asset.py $CONNECT_IP asset1
+GET http://localhost:8080/dht/<key>
 ```

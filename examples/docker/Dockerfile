@@ -13,7 +13,5 @@ RUN mkdir /var/dht
 RUN cd /var/dht && git clone https://github.com/iotcoop/eqitii-dht
 
 COPY dht.py /var/dht
-COPY add_asset.py /var/dht
-COPY read_asset.py /var/dht
 
 CMD ["sh", "-c", "cd /var/dht && python3 dht.py $CONNECT_IP"]
