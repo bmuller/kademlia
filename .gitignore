@@ -8,3 +8,4 @@ dist
 kademlia.egg-info
 docs/_build
 .DS_Store
+.vscode
