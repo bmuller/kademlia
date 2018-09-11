@@ -10,7 +10,6 @@ KADEMLIA_PORT = 8468
 API_PORT = 8080
 
 loop = asyncio.get_event_loop()
-server = 'global'
 server = Server()
 server.listen(KADEMLIA_PORT)
 
@@ -31,9 +30,11 @@ if len(sys.argv) == 2:
 
 async def read_key(request):
     global server
-
     key = request.match_info.get('key')
-    text = await server.get(key)
+    try:
+        text = await server.get(key)
+    except:
+        raise web.HTTPInternalServerError()
     if text:
         return web.Response(text=text)
     else:
@@ -44,8 +45,11 @@ async def set_key(request):
     global server
 
     key = request.match_info.get('key')
-    data = await request.json()
-    await server.set(key, str(data))
+    try:
+        data = await request.json()
+        await server.set(key, str(data))
+    except:
+        raise web.HTTPInternalServerError()
     return web.Response(text=str(data))
 
 
