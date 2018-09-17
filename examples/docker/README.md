@@ -1,3 +1,10 @@
+## Prerequisites
+
+Download and put spark into docker folder.
+https://www.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+
+Name should be **spark-2.3.1-bin-hadoop2.7.tgz**
+
 ## Installation
 
 To build images for containers run
@@ -9,7 +16,7 @@ Then for running containers use next commands:
 
 for first container
 ```
-docker run --name dht1 -p 8080:8080 <hash_of_build_docker_image>
+docker run --name dht1 -p 8080:8080 -p 8000:8000 <hash_of_build_docker_image>
 ```
 
 for each next container
@@ -38,3 +45,5 @@ To get key:
 ```
 GET http://localhost:8080/dht/<key>
 ```
+
+Spark master webui is located on http://localhost:8000
