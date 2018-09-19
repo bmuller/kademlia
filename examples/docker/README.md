@@ -16,12 +16,12 @@ Then for running containers use next commands:
 
 for first container
 ```
-docker run --name dht1 -p 8080:8080 -p 8000:8000 <hash_of_build_docker_image>
+docker run --name dht1 -p 8080:8080 -p 8000:8000 --hostname <hostname_for_the_first_node> <hash_of_build_docker_image>
 ```
 
 for each next container
 ```
-docker run --name <container_name ex. dht2> -e CONNECT_IP=<ip_of_first_container> <hash_of_build_docker_image>
+docker run --name <container_name ex. dht2> -e CONNECT_IP=<ip_of_first_container> -e CONNECT_HOSTNAME=<hostname_of_the_first_node> <hash_of_build_docker_image>
 ```
 
 to get IP address of the first container just run next command
