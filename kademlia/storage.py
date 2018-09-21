@@ -11,6 +11,10 @@ class IStorage:
 
     def __setitem__(self, key, value):
         self.data.set(key.hex(), (int(time.time()), value))
+        keys = self.get('keys')
+        if not key in keys:
+            keys.append(key)
+            self.data.set('keys', keys)
         self.data.dump()
 
     def get(self, key, default=None):
