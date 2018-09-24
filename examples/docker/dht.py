@@ -1,6 +1,8 @@
 import logging
 import asyncio
 import sys
+import ast
+
 sys.path.append("eqitii-dht")
 
 from aiohttp import web
@@ -8,6 +10,8 @@ from kademlia.network import Server
 
 KADEMLIA_PORT = 8468
 API_PORT = 8080
+KEY_ABSENT_MESSAGE = 'No such key'
+NO_KEYS = 'No keys'
 
 loop = asyncio.get_event_loop()
 server = Server()
@@ -38,7 +42,7 @@ async def read_key(request):
     if text:
         return web.Response(text=text)
     else:
-        return web.Response(text='No such key')
+        return web.Response(text=KEY_ABSENT_MESSAGE)
 
 
 async def set_key(request):
@@ -48,12 +52,38 @@ async def set_key(request):
     try:
         data = await request.json()
         await server.set(key, str(data))
+        keys = await server.get('keys')
+        if not keys:
+            keys = []
+        else:
+            keys = ast.literal_eval(keys)
+        if not key in keys:
+            keys.append(key)
+            await server.set('keys', str(keys))
     except:
         raise web.HTTPInternalServerError()
     return web.Response(text=str(data))
 
 
+async def read_all(request):
+    global server
+
+    try:
+        keys = await server.get('keys')
+        if not keys:
+            return web.Response(text=NO_KEYS)
+        result = {}
+        keys = ast.literal_eval(keys)
+        for key in keys:
+            value = await server.get(key)
+            result[key] = value
+        return web.Response(text=str(result))
+    except:
+        raise web.HTTPInternalServerError()
+
+
 app = web.Application()
+app.add_routes([web.get('/dht/all', read_all)])
 app.add_routes([web.get('/dht/{key}', read_key)])
 app.add_routes([web.post('/dht/{key}', set_key)])
 
