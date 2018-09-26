@@ -52,7 +52,7 @@ async def set_key(request):
     key = request.match_info.get('key')
     try:
         data = await request.json()
-        await server.set(key, str(data))
+        await server.set(key, json.dumps(data))
         keys = await server.get('keys')
         if not keys:
             keys = []
