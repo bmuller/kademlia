@@ -77,7 +77,7 @@ async def read_all(request):
         keys = ast.literal_eval(keys)
         for key in keys:
             value = await server.get(key)
-            result[key] = value
+            result[key] = json.loads(value)
         return web.Response(text=json.dumps(result))
     except:
         raise web.HTTPInternalServerError()

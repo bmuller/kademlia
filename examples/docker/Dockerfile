@@ -7,12 +7,13 @@ RUN cd /var/dht && tar -xvzf spark-2.3.1-bin-hadoop2.7.tgz
 RUN rm /var/dht/spark-2.3.1-bin-hadoop2.7.tgz
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y python python3 python3-pip git software-properties-common
+RUN apt-get install -y python python3 python-pip python3-pip git software-properties-common
 RUN add-apt-repository ppa:webupd8team/java -y
 RUN apt-get update
 RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections
 RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 seen true" | debconf-set-selections
 RUN apt-get install -y oracle-java8-installer
+RUN pip install requests
 RUN pip3 install asyncio
 RUN pip3 install rpcudp
 RUN pip3 install pickledb
