@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import json
 import sys
 import ast
 
@@ -77,7 +78,7 @@ async def read_all(request):
         for key in keys:
             value = await server.get(key)
             result[key] = value
-        return web.Response(text=str(result))
+        return web.Response(text=json.dumps(result))
     except:
         raise web.HTTPInternalServerError()
 
