@@ -83,8 +83,28 @@ async def read_all(request):
         raise web.HTTPInternalServerError()
 
 
+async def read_all_list(request):
+    global server
+
+    try:
+        keys = await server.get('keys')
+        if not keys:
+            return web.Response(text=NO_KEYS)
+        result = []
+        keys = ast.literal_eval(keys)
+        for key in keys:
+            obj = {"key": key}
+            value = await server.get(key)
+            obj["value"] = json.loads(value)
+            result.append(obj)
+        return web.Response(text=json.dumps(result))
+    except:
+        raise web.HTTPInternalServerError()
+
+
 app = web.Application()
 app.add_routes([web.get('/dht/all', read_all)])
+app.add_routes([web.get('/dht/all_list', read_all_list)])
 app.add_routes([web.get('/dht/{key}', read_key)])
 app.add_routes([web.post('/dht/{key}', set_key)])
 
