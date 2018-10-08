@@ -97,7 +97,7 @@ if __name__ == '__main__':
     log.addHandler(handler)
     log.setLevel(logging.DEBUG)
 
-    if len(sys.argv) == 2:
+    if sys.argv[1] != "127.0.0.1":
         bootstrap_node = (sys.argv[1], KADEMLIA_PORT)
         loop.run_until_complete(server.bootstrap([bootstrap_node]))
 
