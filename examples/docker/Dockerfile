@@ -25,7 +25,7 @@ RUN echo "JAVA_HOME=\"/usr/lib/jvm/java-8-oracle/jre\"" >> /etc/environment
 RUN /bin/bash -c "source /etc/environment"
 RUN cd /var/dht && git clone https://github.com/iotcoop/eqitii-dht
 
-COPY dht.py /var/dht
+COPY ../../client/dht.py /var/dht
 COPY start_spark.sh /var/dht
 RUN chmod 755 /var/dht/start_spark.sh
 

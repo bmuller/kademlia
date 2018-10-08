@@ -1,0 +1,7 @@
+requests
+rpcudp
+pickledb
+aiohttp
+cchardet
+aiodns
+kademlia==1.1

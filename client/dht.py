@@ -4,34 +4,8 @@ import json
 import sys
 import ast
 
-sys.path.append("eqitii-dht")
-
 from aiohttp import web
 from kademlia.network import Server
-
-KADEMLIA_PORT = 8468
-API_PORT = 8080
-KEY_ABSENT_MESSAGE = 'No such key'
-NO_KEYS = 'No keys'
-
-loop = asyncio.get_event_loop()
-server = Server()
-server.listen(KADEMLIA_PORT)
-
-loop.set_debug(True)
-
-handler = logging.StreamHandler()
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log = logging.getLogger('kademlia')
-log.addHandler(handler)
-log.setLevel(logging.DEBUG)
-
-if len(sys.argv) == 2:
-    bootstrap_node = (sys.argv[1], KADEMLIA_PORT)
-    loop.run_until_complete(server.bootstrap([bootstrap_node]))
-
 
 async def read_key(request):
     global server
@@ -101,11 +75,36 @@ async def read_all_list(request):
     except:
         raise web.HTTPInternalServerError()
 
+if __name__ == '__main__':
+    sys.path.append("eqitii-dht")
 
-app = web.Application()
-app.add_routes([web.get('/dht/all', read_all)])
-app.add_routes([web.get('/dht/all_list', read_all_list)])
-app.add_routes([web.get('/dht/{key}', read_key)])
-app.add_routes([web.post('/dht/{key}', set_key)])
+    KADEMLIA_PORT = int(sys.argv[2])
+    API_PORT = int(sys.argv[3])
+    KEY_ABSENT_MESSAGE = 'No such key'
+    NO_KEYS = 'No keys'
 
-web.run_app(app, port=API_PORT)
+    loop = asyncio.get_event_loop()
+    server = Server()
+    server.listen(KADEMLIA_PORT)
+
+    loop.set_debug(True)
+
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    log = logging.getLogger('kademlia')
+    log.addHandler(handler)
+    log.setLevel(logging.DEBUG)
+
+    if len(sys.argv) == 2:
+        bootstrap_node = (sys.argv[1], KADEMLIA_PORT)
+        loop.run_until_complete(server.bootstrap([bootstrap_node]))
+
+    app = web.Application()
+    app.add_routes([web.get('/dht/all', read_all)])
+    app.add_routes([web.get('/dht/all_list', read_all_list)])
+    app.add_routes([web.get('/dht/{key}', read_key)])
+    app.add_routes([web.post('/dht/{key}', set_key)])
+
+    web.run_app(app, port=API_PORT)
