@@ -8,7 +8,7 @@ import logging
 
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import digest
-from kademlia.storage import IStorage
+from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
@@ -37,7 +37,7 @@ class Server(object):
         """
         self.ksize = ksize
         self.alpha = alpha
-        self.storage = storage or IStorage()
+        self.storage = storage or ForgetfulStorage()
         self.node = Node(node_id or digest(random.getrandbits(255)))
         self.transport = None
         self.protocol = None

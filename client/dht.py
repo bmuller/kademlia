@@ -6,6 +6,7 @@ import ast
 
 from aiohttp import web
 from kademlia.network import Server
+from kademlia.storage import DiskStorage
 
 async def read_key(request):
     global server
@@ -76,15 +77,13 @@ async def read_all_list(request):
         raise web.HTTPInternalServerError()
 
 if __name__ == '__main__':
-    sys.path.append("eqitii-dht")
-
     KADEMLIA_PORT = int(sys.argv[2])
     API_PORT = int(sys.argv[3])
     KEY_ABSENT_MESSAGE = 'No such key'
     NO_KEYS = 'No keys'
 
     loop = asyncio.get_event_loop()
-    server = Server()
+    server = Server(storage=DiskStorage())
     server.listen(KADEMLIA_PORT)
 
     loop.set_debug(True)

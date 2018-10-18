@@ -6,53 +6,41 @@ from collections import OrderedDict
 
 
 class IStorage:
-    def __init__(self):
-        self.data = pickledb.load('data.db', False)
+    """
+    Local storage for this node.
+    IStorage implementations of get must return the same type as put in by set
+    """
 
     def __setitem__(self, key, value):
-        self.data.set(key.hex(), (int(time.time()), value))
-        self.data.dump()
-
-    def get(self, key, default=None):
-        value = self.data.get(key.hex())
-        if value is not None:
-            return value[1]
-        return default
+        """
+        Set a key to the given value.
+        """
+        raise NotImplementedError
 
     def __getitem__(self, key):
-        return self.data.get(key.hex())[1]
+        """
+        Get the given key.  If item doesn't exist, raises C{KeyError}
+        """
+        raise NotImplementedError
 
-    def __iter__(self):
-        return iter(self.items())
-
-    def __repr__(self):
-        return repr(self.data.getall())
+    def get(self, key, default=None):
+        """
+        Get given key.  If not found, return default.
+        """
+        raise NotImplementedError
 
     def iteritemsOlderThan(self, secondsOld):
-        minBirthday = int(time.time()) - secondsOld
-        zipped = self._tripleIterable()
-        matches = takewhile(lambda r: minBirthday >= r[1], zipped)
-        return list(map(operator.itemgetter(0, 2), matches))
+        """
+        Return the an iterator over (key, value) tuples for items older
+        than the given secondsOld.
+        """
+        raise NotImplementedError
 
-    def _tripleIterable(self):
-        ikeys = self.getAllKeysBytes()
-        ibirthday = map(operator.itemgetter(0), self.getAllValues())
-        ivalues = map(operator.itemgetter(1), self.getAllValues())
-        return zip(ikeys, ibirthday, ivalues)
-
-    def getAllValues(self):
-        result = []
-        for key in self.data.getall():
-            result.append(self.data.get(key))
-        return result
-
-    def getAllKeysBytes(self):
-        return list(map(lambda k: bytes.fromhex(k), self.data.getall()))
-
-    def items(self):
-        ikeys = self.getAllKeysBytes()
-        ivalues = map(operator.itemgetter(1), self.getAllValues())
-        return zip(ikeys, ivalues)
+    def __iter__(self):
+        """
+        Get the iterator for this storage, should yield tuple of (key, value)
+        """
+        raise NotImplementedError
 
 
 class ForgetfulStorage(IStorage):
@@ -107,4 +95,54 @@ class ForgetfulStorage(IStorage):
         self.cull()
         ikeys = self.data.keys()
         ivalues = map(operator.itemgetter(1), self.data.values())
+        return zip(ikeys, ivalues)
+
+
+class DiskStorage(IStorage):
+    def __init__(self):
+        self.data = pickledb.load('data.db', False)
+
+    def __setitem__(self, key, value):
+        self.data.set(key.hex(), (int(time.time()), value))
+        self.data.dump()
+
+    def get(self, key, default=None):
+        value = self.data.get(key.hex())
+        if value is not None:
+            return value[1]
+        return default
+
+    def __getitem__(self, key):
+        return self.data.get(key.hex())[1]
+
+    def __iter__(self):
+        return iter(self.items())
+
+    def __repr__(self):
+        return repr(self.data.getall())
+
+    def iteritemsOlderThan(self, secondsOld):
+        minBirthday = int(time.time()) - secondsOld
+        zipped = self._tripleIterable()
+        matches = takewhile(lambda r: minBirthday >= r[1], zipped)
+        return list(map(operator.itemgetter(0, 2), matches))
+
+    def _tripleIterable(self):
+        ikeys = self.getAllKeysBytes()
+        ibirthday = map(operator.itemgetter(0), self.getAllValues())
+        ivalues = map(operator.itemgetter(1), self.getAllValues())
+        return zip(ikeys, ibirthday, ivalues)
+
+    def getAllValues(self):
+        result = []
+        for key in self.data.getall():
+            result.append(self.data.get(key))
+        return result
+
+    def getAllKeysBytes(self):
+        return list(map(lambda k: bytes.fromhex(k), self.data.getall()))
+
+    def items(self):
+        ikeys = self.getAllKeysBytes()
+        ivalues = map(operator.itemgetter(1), self.getAllValues())
         return zip(ikeys, ivalues)

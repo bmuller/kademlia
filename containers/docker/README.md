@@ -2,7 +2,7 @@
 
 To build images for containers run
 ```
-docker build <path_to_dockerfile>
+docker build  -f <path_to_dockerfile> .
 ```
 
 Then for running dht client containers use next commands:
