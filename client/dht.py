@@ -11,6 +11,7 @@ from kademlia.exceptions import InvalidSignException, UnauthorizedOperationExcep
 from kademlia.network import Server
 from kademlia.storage import DiskStorage
 
+
 async def read_key(request):
     global server
     key = request.match_info.get('key')
@@ -30,7 +31,8 @@ async def set_key(request):
     key = request.match_info.get('key')
     try:
         data = await request.json()
-        await server.set_auth(key, Value.of_json(data))
+        value = Value.of_json(data)
+        await server.set_auth(key, value)
 
         keys = await server.get('keys')
         if not keys:
