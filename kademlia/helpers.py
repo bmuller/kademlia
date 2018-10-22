@@ -10,5 +10,7 @@ class JsonSerializable(object):
             }
         elif type(obj) in [str, int, bool, dict, list]:
             return obj
+        elif obj is None:
+            return obj
         else:
             return str(obj)
