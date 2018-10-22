@@ -6,6 +6,7 @@ import random
 import pickle
 import asyncio
 import logging
+import time
 
 from kademlia.crypto import Crypto
 from kademlia.dto.value import Value
@@ -302,6 +303,8 @@ def validate_authorization(key, value: Value):
     sign = value.authorization.sign
     exp_time = value.authorization.pub_key.exp_time
     data = value.data
+    assert exp_time > int(time.time())
+
     dRecord = digest(str(key) + str(data) + str(exp_time))
 
     if not Crypto.check_signature(dRecord, sign, value.authorization.pub_key.key):
