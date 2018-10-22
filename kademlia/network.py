@@ -13,7 +13,7 @@ from kademlia.exceptions import UnauthorizedOperationException, InvalidSignExcep
 from kademlia.helpers import JsonSerializable
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import digest
-from kademlia.storage import IStorage
+from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
@@ -42,7 +42,7 @@ class Server(object):
         """
         self.ksize = ksize
         self.alpha = alpha
-        self.storage = storage or IStorage()
+        self.storage = storage or ForgetfulStorage()
         self.node = Node(node_id or digest(random.getrandbits(255)))
         self.transport = None
         self.protocol = None
@@ -163,22 +163,32 @@ class Server(object):
         Set the given string key to the given value in the network.
         """
 
-        stored_value = Value.of_json(await self.get(key))
+        stored_value_json = await self.get(key)
 
-        if stored_value.authorization is None and value.authorization is None:
-            return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
-        elif stored_value.authorization is None and value.authorization is not None:
-            validate_authorization(key, value)
-            return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
-        elif stored_value.authorization is not None and value.authorization is not None:
-            validate_authorization(key, value)
+        if stored_value_json is not None:
+            # TODO: fix double json loads
+            stored_value = Value.of_json(json.loads(json.loads(stored_value_json)))
 
-            if stored_value.authorization.pub_key.key == value.authorization.pub_key.key:
+            if stored_value.authorization is None and value.authorization is None:
                 return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+            elif stored_value.authorization is None and value.authorization is not None:
+                validate_authorization(key, value)
+                return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+            elif stored_value.authorization is not None and value.authorization is not None:
+                validate_authorization(key, value)
+
+                if stored_value.authorization.pub_key.key == value.authorization.pub_key.key:
+                    return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+                else:
+                    raise UnauthorizedOperationException
             else:
                 raise UnauthorizedOperationException
         else:
-            raise UnauthorizedOperationException
+            if value.authorization is not None:
+                validate_authorization(key, value)
+                return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+            else:
+                return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
 
     async def set(self, key, value: Value):
         """
