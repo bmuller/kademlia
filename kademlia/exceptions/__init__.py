@@ -8,11 +8,10 @@ class InvalidJsonException(Exception):
 
 class UnauthorizedOperationException(BaseException):
 
-    def __init__(self, message):
-        #TODO: come up with meaningful message pattern
-        MESSAGE_PATTERN = 'No'
+    def __init__(self):
+        MESSAGE_PATTERN = 'You are not authorized to perform that operation'
 
-        BaseException.__init__(self, message)
+        BaseException.__init__(self, MESSAGE_PATTERN)
 
 
 class InvalidSignException(BaseException):
