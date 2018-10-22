@@ -1,14 +1,19 @@
 """
 Package for interacting on the network at a high level.
 """
+import json
 import random
 import pickle
 import asyncio
 import logging
 
+from kademlia.crypto import Crypto
+from kademlia.dto.value import Value
+from kademlia.exceptions import UnauthorizedOperationException, InvalidSignException
+from kademlia.helpers import JsonSerializable
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import digest
-from kademlia.storage import ForgetfulStorage
+from kademlia.storage import IStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
@@ -37,7 +42,7 @@ class Server(object):
         """
         self.ksize = ksize
         self.alpha = alpha
-        self.storage = storage or ForgetfulStorage()
+        self.storage = storage or IStorage()
         self.node = Node(node_id or digest(random.getrandbits(255)))
         self.transport = None
         self.protocol = None
@@ -153,17 +158,42 @@ class Server(object):
                                   self.ksize, self.alpha)
         return await spider.find()
 
-    async def set(self, key, value):
+    async def set_auth(self, key, value: Value):
         """
         Set the given string key to the given value in the network.
         """
-        if not check_dht_value_type(value):
+
+        stored_value = Value.of_json(await self.get(key))
+
+        if stored_value.authorization is None and value.authorization is None:
+            return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+        elif stored_value.authorization is None and value.authorization is not None:
+            validate_authorization(key, value)
+            return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+        elif stored_value.authorization is not None and value.authorization is not None:
+            validate_authorization(key, value)
+
+            if stored_value.authorization.pub_key.key == value.authorization.pub_key.key:
+                return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
+            else:
+                raise UnauthorizedOperationException
+        else:
+            raise UnauthorizedOperationException
+
+    async def set(self, key, value: Value):
+        """
+        Set the given string key to the given value in the network.
+        """
+        json_value = json.dumps(JsonSerializable.__to_dict__(value))
+
+        if not check_dht_value_type(json_value):
             raise TypeError(
                 "Value must be of type int, float, bool, str, or bytes"
             )
-        log.info("setting '%s' = '%s' on network", key, value)
+
+        log.info("setting '%s' = '%s' on network", key, json_value)
         dkey = digest(key)
-        return await self.set_digest(dkey, value)
+        return await self.set_digest(dkey, json_value)
 
     async def set_digest(self, dkey, value):
         """
@@ -256,3 +286,14 @@ def check_dht_value_type(value):
         ]
     )
     return type(value) in typeset
+
+
+def validate_authorization(key, value: Value):
+    sign = value.authorization.sign
+    exp_time = value.authorization.pub_key.exp_time
+    data = value.data
+    dRecord = digest(str(key) + str(data) + str(exp_time))
+
+    if not Crypto.check_signature(dRecord, sign, value.authorization.pub_key.key):
+        raise InvalidSignException(sign)
+

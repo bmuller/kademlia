@@ -37,6 +37,7 @@ class KademliaProtocol(RPCProtocol):
         return self.sourceNode.id
 
     def rpc_store(self, sender, nodeid, key, value):
+        #TODO: check ACL HERE
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
         log.debug("got a store request from %s, storing '%s'='%s'",
