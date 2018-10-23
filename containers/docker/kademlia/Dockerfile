@@ -2,6 +2,8 @@ FROM python:3.7.0-alpine3.7
 
 RUN apk add g++
 RUN apk add make
+RUN apk add libffi-dev
+RUN apk add libressl-dev
 COPY kademlia /app/kademlia
 COPY setup.py /app
 WORKDIR /app

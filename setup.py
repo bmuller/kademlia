@@ -11,5 +11,5 @@ setup(
     license="MIT",
     url="http://github.com/bmuller/kademlia",
     packages=find_packages(),
-    install_requires=["rpcudp>=3.0.0", "pycrypto==2.6"]
+    install_requires=["rpcudp>=3.0.0", "pycrypto==2.6", "cryptography==2.3.1"]
 )
