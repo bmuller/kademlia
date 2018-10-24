@@ -8,6 +8,7 @@ from rpcudp.protocol import RPCProtocol
 from kademlia.config import Config
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.dto.value import Value
+from kademlia.exceptions import UnauthorizedOperationException, InvalidSignException
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
 from kademlia.utils import digest, validate_authorization, check_new_value_valid
@@ -41,23 +42,34 @@ class KademliaProtocol(RPCProtocol):
         return self.sourceNode.id
 
     async def rpc_store(self, sender, nodeid, key, value):
-
-        stored_value_json = await self.get(key)
-
-        des_value = Value.of_json(json.loads(value))
-
-        if stored_value_json is not None:
-            stored_value = Value.of_json(json.loads(stored_value_json))
-            check_new_value_valid(key, stored_value, des_value)
-        elif des_value.authorization is not None:
-            validate_authorization(key, des_value)
-
-        source = Node(nodeid, sender[0], sender[1])
-        self.welcomeIfNewNode(source)
         log.debug("got a store request from %s, storing '%s'='%s'",
                   sender, key.hex(), value)
 
-        self.storage[key] = value
+        stored_value_json = await self.get(key)
+
+        try:
+            des_value = Value.of_json(json.loads(value))
+
+            if stored_value_json is not None:
+                stored_value = Value.of_json(json.loads(stored_value_json))
+                check_new_value_valid(key, stored_value, des_value)
+            elif des_value.authorization is not None:
+                validate_authorization(key, des_value)
+
+            source = Node(nodeid, sender[0], sender[1])
+            self.welcomeIfNewNode(source)
+
+            self.storage[key] = value
+
+        except AssertionError:
+            log.exception("Unable to store value, got value with unsupported format: %s", value)
+
+        except UnauthorizedOperationException:
+            log.exception("Unable to store value, unauthorized storing attempt")
+
+        except InvalidSignException:
+            log.exception("Signature is not valid")
+
         return True
 
     def rpc_find_node(self, sender, nodeid, key):

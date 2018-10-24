@@ -9,7 +9,7 @@ class InvalidJsonException(Exception):
 class UnauthorizedOperationException(BaseException):
 
     def __init__(self):
-        MESSAGE_PATTERN = 'You are not authorized to perform that operation'
+        MESSAGE_PATTERN = 'You are not authorized to perform operation'
 
         BaseException.__init__(self, MESSAGE_PATTERN)
 
