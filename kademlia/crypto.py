@@ -54,29 +54,6 @@ class Crypto(object):
             return False
 
 
-class PrivateKey(object):
-
-    def __init__(self, path_to_priv_key, pass_phrase=None):
-        self.key = open(path_to_priv_key).read().encode('ascii')
-        self.passPhrase = pass_phrase
-
-    def sign(self, value):
-
-        privkey = serialization.load_pem_private_key(
-            self.key, password=self.passPhrase, backend=default_backend())
-
-        prehashed = bytes(hashlib.sha256(value).hexdigest(), 'ascii')
-
-        signature = privkey.sign(
-            prehashed,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH),
-            hashes.SHA256())
-
-        return signature
-
-
 class PublicKey(JsonSerializable):
 
     def __init__(self, base64_pub_key, exp_time=None):
