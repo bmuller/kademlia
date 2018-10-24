@@ -36,7 +36,7 @@ class Crypto(object):
     def check_signature(value, signature, pub_key):
 
         decoded_key = base64.b64decode(pub_key)
-        serialized_key = serialization.load_ssh_public_key(decoded_key, backend=default_backend())
+        serialized_key = serialization.load_pem_public_key(decoded_key, backend=default_backend())
         decoded_sig = base64.b64decode(signature)
 
         prehashed_val = bytes(hashlib.sha256(value).hexdigest(), 'ascii')
