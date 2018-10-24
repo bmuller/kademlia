@@ -1,12 +1,16 @@
+import json
 import random
 import asyncio
 import logging
 
 from rpcudp.protocol import RPCProtocol
 
+from kademlia.config import Config
+from kademlia.crawling import ValueSpiderCrawl
+from kademlia.dto.value import Value
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
-from kademlia.utils import digest
+from kademlia.utils import digest, validate_authorization, check_new_value_valid
 
 log = logging.getLogger(__name__)
 
@@ -36,12 +40,23 @@ class KademliaProtocol(RPCProtocol):
         self.welcomeIfNewNode(source)
         return self.sourceNode.id
 
-    def rpc_store(self, sender, nodeid, key, value):
-        #TODO: check ACL HERE
+    async def rpc_store(self, sender, nodeid, key, value):
+
+        stored_value_json = await self.get(key)
+
+        des_value = Value.of_json(json.loads(value))
+
+        if stored_value_json is not None:
+            stored_value = Value.of_json(json.loads(stored_value_json))
+            check_new_value_valid(key, stored_value, des_value)
+        elif des_value.authorization is not None:
+            validate_authorization(key, des_value)
+
         source = Node(nodeid, sender[0], sender[1])
         self.welcomeIfNewNode(source)
         log.debug("got a store request from %s, storing '%s'='%s'",
                   sender, key.hex(), value)
+
         self.storage[key] = value
         return True
 
@@ -127,3 +142,17 @@ class KademliaProtocol(RPCProtocol):
         log.info("got successful response from %s", node)
         self.welcomeIfNewNode(node)
         return result
+
+    async def get(self, key):
+        log.info("Looking up key %s", key)
+        # if this node has it, return it
+        if self.storage.get(key) is not None:
+            return self.storage.get(key)
+        node = Node(key)
+        nearest = self.router.findNeighbors(node)
+        if len(nearest) == 0:
+            log.warning("There are no known neighbors to get key %s", key)
+            return None
+
+        spider = ValueSpiderCrawl(self, node, nearest, Config.K_SIZE, Config.ALPHA)
+        return await spider.find()
