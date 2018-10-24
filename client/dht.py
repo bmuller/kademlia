@@ -33,15 +33,6 @@ async def set_key(request):
         data = await request.json()
         value = Value.of_json(data)
         await server.set_auth(key, value)
-
-        keys = await server.get('keys')
-        if not keys:
-            keys = []
-        else:
-            keys = ast.literal_eval(keys)
-        if not key in keys:
-            keys.append(key)
-            await server.set('keys', str(keys))
     except InvalidSignException as ex:
         raise web.HTTPBadRequest
     except UnauthorizedOperationException:
