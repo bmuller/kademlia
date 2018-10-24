@@ -74,9 +74,6 @@ class Authorization(JsonSerializable):
     def sign(self, value):
         self._sign = value
 
-    @classmethod
-    def of(cls, pub_key: PublicKey, sign):
-        return
     @staticmethod
     def of_json(dct):
         assert 'pub_key' in dct
