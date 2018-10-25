@@ -45,16 +45,17 @@ class KademliaProtocol(RPCProtocol):
         log.debug("got a store request from %s, storing '%s'='%s'",
                   sender, key.hex(), value)
 
-        stored_value_json = await self.get(key)
-
         try:
             des_value = Value.of_json(json.loads(value))
+            if des_value.authorization is not None:
+                validate_authorization(key, des_value)
 
+            log.debug(f"Received value for key {key.hex()} is valid,"
+                      f" going to retrieve values stored under key : {key.hex}")
+            stored_value_json = await self.get(key)
             if stored_value_json is not None:
                 stored_value = Value.of_json(json.loads(stored_value_json))
                 check_new_value_valid(key, stored_value, des_value)
-            elif des_value.authorization is not None:
-                validate_authorization(key, des_value)
 
             source = Node(nodeid, sender[0], sender[1])
             self.welcomeIfNewNode(source)

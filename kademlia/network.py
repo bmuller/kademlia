@@ -160,14 +160,15 @@ class Server(object):
         Set the given string key to the given value in the network.
         """
         log.debug("Going to process save request")
+        if value.authorization is not None:
+            validate_authorization(digest(key), value)
+
         log.debug(f"Going to retrieve stored value for key: {digest(key)}")
         stored_value_json = await self.get(key)
 
         if stored_value_json is not None:
             stored_value = Value.of_json(json.loads(stored_value_json))
             check_new_value_valid(digest(key), stored_value, value)
-        elif value.authorization is not None:
-            validate_authorization(digest(key), value)
 
         return await self.set(key, json.dumps(JsonSerializable.__to_dict__(value)))
 
