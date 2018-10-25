@@ -1,5 +1,19 @@
-from kademlia.crypto import PublicKey
-from kademlia.helpers import JsonSerializable
+class JsonSerializable(object):
+
+    @staticmethod
+    def __to_dict__(obj):
+
+        if isinstance(obj, JsonSerializable):
+            fields = [f for f in dir(obj) if not callable(f) and not f.startswith('__') and f.startswith('_')]
+            return {
+                key[1:]: JsonSerializable.__to_dict__(obj.__dict__[key]) for key in fields
+            }
+        elif type(obj) in [str, int, bool, dict, list]:
+            return obj
+        elif obj is None:
+            return obj
+        else:
+            return str(obj)
 
 
 class Value(JsonSerializable):
@@ -49,6 +63,37 @@ class Value(JsonSerializable):
             return Value.of_auth(dct['data'], Authorization.of_json(dct['authorization']))
 
 
+class PublicKey(JsonSerializable):
+
+    def __init__(self, base64_pub_key, exp_time=None):
+        self.key = base64_pub_key
+        self.exp_time = exp_time
+
+    @property
+    def key(self):
+        return self._key
+
+    @key.setter
+    def key(self, base64_pub_key):
+        check_pkey_type(base64_pub_key)
+        self._key = base64_pub_key
+
+    @property
+    def exp_time(self):
+        return self._exp_time
+
+    @exp_time.setter
+    def exp_time(self, exp_time):
+        self._exp_time = exp_time
+
+    @staticmethod
+    def of_json(dct):
+        assert 'exp_time' in dct
+        assert 'key' in dct
+
+        return PublicKey(dct['key'], dct['exp_time'])
+
+
 class Authorization(JsonSerializable):
 
     def __init__(self, pub_key: PublicKey, sign):
@@ -59,8 +104,6 @@ class Authorization(JsonSerializable):
     @property
     def pub_key(self):
         return self._pub_key
-
-
 
     @pub_key.setter
     def pub_key(self, value):
@@ -89,3 +132,7 @@ def check_dht_value_type(value):
     """
     typeset = {int, float, bool, str, bytes}
     return type(value) in typeset
+
+
+def check_pkey_type(base64_pub_key):
+    assert type(base64_pub_key) is str or base64_pub_key is None

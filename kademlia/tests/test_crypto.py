@@ -3,7 +3,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from unittest.mock import Mock, ANY
 
-from kademlia.crypto import Crypto, PublicKey
+from kademlia.crypto import Crypto
+from kademlia.dto.dto import PublicKey
+
 
 class CryptoTests(unittest.TestCase):
 

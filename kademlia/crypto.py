@@ -3,8 +3,6 @@ import logging
 import hashlib
 import base64
 
-from kademlia.helpers import JsonSerializable
-
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -52,38 +50,3 @@ class Crypto(object):
             return True
         except InvalidSignature:
             return False
-
-
-class PublicKey(JsonSerializable):
-
-    def __init__(self, base64_pub_key, exp_time=None):
-        self.key = base64_pub_key
-        self.exp_time = exp_time
-
-    @property
-    def key(self):
-        return self._key
-
-    @key.setter
-    def key(self, base64_pub_key):
-        check_pkey_type(base64_pub_key)
-        self._key = base64_pub_key
-
-    @property
-    def exp_time(self):
-        return self._exp_time
-
-    @exp_time.setter
-    def exp_time(self, exp_time):
-        self._exp_time = exp_time
-
-    @staticmethod
-    def of_json(dct):
-        assert 'exp_time' in dct
-        assert 'key' in dct
-
-        return PublicKey(dct['key'], dct['exp_time'])
-
-
-def check_pkey_type(base64_pub_key):
-    assert type(base64_pub_key) is str or base64_pub_key is None

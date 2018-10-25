@@ -7,7 +7,7 @@ from rpcudp.protocol import RPCProtocol
 
 from kademlia.config import Config
 from kademlia.crawling import ValueSpiderCrawl
-from kademlia.dto.value import Value
+from kademlia.dto.dto import Value
 from kademlia.exceptions import UnauthorizedOperationException, InvalidSignException
 from kademlia.node import Node
 from kademlia.routing import RoutingTable

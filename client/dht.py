@@ -6,7 +6,7 @@ import ast
 
 from aiohttp import web
 
-from kademlia.dto.value import Value
+from kademlia.dto.dto import Value
 from kademlia.exceptions import InvalidSignException, UnauthorizedOperationException
 from kademlia.network import Server
 from kademlia.storage import DiskStorage

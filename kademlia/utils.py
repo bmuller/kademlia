@@ -2,13 +2,16 @@
 General catchall for functions that don't make sense as methods.
 """
 import hashlib
+import logging
 import operator
 import asyncio
 import time
 
 from kademlia.crypto import Crypto
-from kademlia.dto.value import Value
+from kademlia.dto.dto import Value
 from kademlia.exceptions import InvalidSignException, UnauthorizedOperationException
+
+log = logging.getLogger(__name__)
 
 
 async def gather_dict(d):
@@ -63,6 +66,7 @@ def bytesToBitString(bites):
 
 
 def validate_authorization(dkey, value: Value):
+    log.debug(f"Going to validate authorization for key {dkey.hex()}")
     sign = value.authorization.sign
     exp_time = value.authorization.pub_key.exp_time
     data = value.data

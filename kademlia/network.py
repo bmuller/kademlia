@@ -7,8 +7,7 @@ import pickle
 import asyncio
 import logging
 
-from kademlia.dto.value import Value
-from kademlia.helpers import JsonSerializable
+from kademlia.dto.dto import Value, JsonSerializable
 from kademlia.protocol import KademliaProtocol
 from kademlia.utils import digest, validate_authorization, check_new_value_valid
 from kademlia.storage import ForgetfulStorage
@@ -160,7 +159,8 @@ class Server(object):
         """
         Set the given string key to the given value in the network.
         """
-
+        log.debug("Going to process save request")
+        log.debug(f"Going to retrieve stored value for key: {digest(key)}")
         stored_value_json = await self.get(key)
 
         if stored_value_json is not None:
