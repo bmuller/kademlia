@@ -1,7 +1,7 @@
 import unittest
 import time
 import pickledb
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from kademlia.network import Server
 from kademlia.storage import ForgetfulStorage
@@ -13,12 +13,13 @@ class ForgetfulStorageTests(unittest.TestCase):
     def setUp(self):
         self.ts = ForgetfulStorage()
 
-    def test___setitem_(self):
+    @patch('kademlia.storage.time')
+    def test___setitem_(self, mocked_time):
         """
         __setitem__ should set value to storage and add timestamp
         __setitem__ should call cull method
         """
-        time.monotonic = Mock(return_value=1)
+        mocked_time.monotonic = Mock(return_value=1)
         self.ts.cull = Mock()
         self.ts['key1'] = 'value1'
         self.assertEqual(self.ts.data['key1'], (1, 'value1'))
@@ -61,13 +62,14 @@ class ForgetfulStorageTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.ts['key2']
 
-    def test_iteritemsOlderThan(self):
+    @patch('kademlia.storage.time')
+    def test_iteritemsOlderThan(self, mocked_time):
         """
         iteritemsOlderThan should return tuples with keys and values
         from storage for items not older than specified value
         """
         self.ts.cull = Mock()
-        time.monotonic = Mock(side_effect=[1, 2, 3, 4])
+        mocked_time.monotonic = Mock(side_effect=[1, 2, 3, 4])
         self.ts['key1'] = 'value1'
         self.ts['key2'] = 'value2'
         self.ts['key3'] = 'value3'
@@ -80,12 +82,13 @@ class DiskStorageTests(unittest.TestCase):
         pickledb.load = Mock()
         self.ts = DiskStorage()
 
-    def test___setitem_(self):
+    @patch('kademlia.storage.time')
+    def test___setitem_(self, mocked_time):
         """
         __setitem__ should set hex key to storage with timestamp and value
         __setitem__ should call dupm
         """
-        time.time = Mock(return_value=123)
+        mocked_time.time = Mock(return_value=123)
         self.ts.data.set = Mock()
         self.ts.data.dump = Mock()
         key = bytes.fromhex('91ecb5')
@@ -113,12 +116,13 @@ class DiskStorageTests(unittest.TestCase):
         self.ts.data.get = Mock(return_value=(1, 'value1'))
         self.assertEqual(self.ts[bytes.fromhex('91ecb5')], 'value1')
 
-    def test_iteritemsOlderThan(self):
+    @patch('kademlia.storage.time')
+    def test_iteritemsOlderThan(self, mocked_time):
         """
         iteritemsOlderThan should return tuples with keys and values
         from storage for items not older than specified value
         """
-        time.time = Mock(return_value=4)
+        mocked_time.time = Mock(return_value=4)
         self.ts.data.getall = Mock(return_value=('91ecb5', '91ecb6', '91ecb7'))
         self.ts.getAllValues = Mock(return_value=[(1, '91ecb5'), (2, '91ecb6'), (3, '91ecb7')])
         self.assertEqual(len(self.ts.iteritemsOlderThan(2)), 2)
