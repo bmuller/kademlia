@@ -6,12 +6,13 @@ import logging
 from rpcudp.protocol import RPCProtocol
 
 from kademlia.config import Config
+from kademlia.utils import digest, validate_authorization, check_new_value_valid
 from kademlia.crawling import ValueSpiderCrawl
-from kademlia.dto.dto import Value
+from kademlia.crypto import Crypto
+from kademlia.dto.dto import Value, JsonSerializable
 from kademlia.exceptions import UnauthorizedOperationException, InvalidSignException
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
-from kademlia.utils import digest, validate_authorization, check_new_value_valid
 
 log = logging.getLogger(__name__)
 
@@ -64,12 +65,23 @@ class KademliaProtocol(RPCProtocol):
 
         except AssertionError:
             log.exception("Unable to store value, got value with unsupported format: %s", value)
+            data = f"Received request to store data of unsupported protocol from node : " \
+                   f"[IP : {sender[0]}, PORT: {sender[1]}]"
+            value = Crypto.get_signed_value(key, data)
+            self.storage[key] = json.dumps(JsonSerializable.__to_dict__(value))
 
         except UnauthorizedOperationException:
             log.exception("Unable to store value, unauthorized storing attempt")
+            data = f"Received unauthorized request to update data from node : [IP : {sender[0]}, PORT: {sender[1]}]"
+            value = Crypto.get_signed_value(key, data)
+            self.storage[key] = json.dumps(JsonSerializable.__to_dict__(value))
 
         except InvalidSignException:
             log.exception("Signature is not valid")
+            data = f"Received request to update data with invalid signature from node : " \
+                   f"[IP : {sender[0]}, PORT: {sender[1]}]"
+            value = Crypto.get_signed_value(key, data)
+            self.storage[key] = json.dumps(JsonSerializable.__to_dict__(value))
 
         return True
 

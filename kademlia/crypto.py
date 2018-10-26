@@ -8,6 +8,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
 
+from kademlia.dto.dto import Value, Authorization, PublicKey
+
 log = logging.getLogger(__name__)
 
 
@@ -50,3 +52,15 @@ class Crypto(object):
             return True
         except InvalidSignature:
             return False
+
+    @staticmethod
+    def get_signed_value(dkey, data, time=None, priv_key_path='key.pem', pub_key_path='public.pem'):
+        from kademlia.utils import digest
+        dval = digest(str(dkey) + str(data) + str(time))
+
+        signature = str(base64.encodebytes(Crypto.get_signature(dval, open(priv_key_path).read().encode('ascii'))))[1:]
+
+        pub_key = str(base64.b64encode(open(pub_key_path).read().encode('ascii')))[1:]
+        return Value.of_auth(data,
+                             Authorization(PublicKey(pub_key, time),
+                                           signature.replace('\\n', '')))
