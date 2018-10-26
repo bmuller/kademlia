@@ -1,7 +1,7 @@
-requests
-rpcudp
-pickledb
-aiohttp
-cchardet
-aiodns
+requests==2.20.0
+rpcudp==3.0.0
+pickledb==0.7.2
+aiohttp==3.4.4
+cchardet==2.1.4
+aiodns==1.1.1
 kademlia==1.1
