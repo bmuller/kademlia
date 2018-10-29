@@ -15,6 +15,11 @@ if [ -z "$API_PORT" ]; then
   API_PORT=$DEFAULT_API_PORT
 fi
 
+if [ "$DEV" = true ] ; then
+    apk add curl
+fi
+
+
 openssl genrsa -out key.pem 2048
 openssl rsa -in key.pem -out public.pem -outform PEM -pubout
 
