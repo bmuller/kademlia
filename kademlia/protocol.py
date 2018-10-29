@@ -72,16 +72,9 @@ class KademliaProtocol(RPCProtocol):
 
         except UnauthorizedOperationException:
             log.exception("Unable to store value, unauthorized storing attempt")
-            data = f"Received unauthorized request to update data from node : [IP : {sender[0]}, PORT: {sender[1]}]"
-            value = Crypto.get_signed_value(key, data)
-            self.storage[key] = json.dumps(JsonSerializable.__to_dict__(value))
 
         except InvalidSignException:
             log.exception("Signature is not valid")
-            data = f"Received request to update data with invalid signature from node : " \
-                   f"[IP : {sender[0]}, PORT: {sender[1]}]"
-            value = Crypto.get_signed_value(key, data)
-            self.storage[key] = json.dumps(JsonSerializable.__to_dict__(value))
 
         return True
 
