@@ -6,16 +6,16 @@ import operator
 import asyncio
 
 
-async def gather_dict(d):
-    cors = list(d.values())
+async def gather_dict(dic):
+    cors = list(dic.values())
     results = await asyncio.gather(*cors)
-    return dict(zip(d.keys(), results))
+    return dict(zip(dic.keys(), results))
 
 
-def digest(s):
-    if not isinstance(s, bytes):
-        s = str(s).encode('utf8')
-    return hashlib.sha1(s).digest()
+def digest(string):
+    if not isinstance(string, bytes):
+        string = str(string).encode('utf8')
+    return hashlib.sha1(string).digest()
 
 
 class OrderedSet(list):
@@ -34,7 +34,7 @@ class OrderedSet(list):
         self.append(thing)
 
 
-def sharedPrefix(args):
+def shared_prefix(args):
     """
     Find the shared prefix between the strings.
 
@@ -52,6 +52,6 @@ def sharedPrefix(args):
     return args[0][:i]
 
 
-def bytesToBitString(bites):
+def bytes_to_bit_string(bites):
     bits = [bin(bite)[2:].rjust(8, '0') for bite in bites]
     return "".join(bits)

@@ -4,15 +4,15 @@ import heapq
 
 class Node:
     def __init__(self, node_id, ip=None, port=None):
-        self.id = node_id
-        self.ip = ip
+        self.id = node_id  # pylint: disable=invalid-name
+        self.ip = ip  # pylint: disable=invalid-name
         self.port = port
         self.long_id = int(node_id.hex(), 16)
 
-    def sameHomeAs(self, node):
+    def same_home_as(self, node):
         return self.ip == node.ip and self.port == node.port
 
-    def distanceTo(self, node):
+    def distance_to(self, node):
         """
         Get the distance between this node and another.
         """
@@ -31,7 +31,7 @@ class Node:
         return "%s:%s" % (self.ip, str(self.port))
 
 
-class NodeHeap(object):
+class NodeHeap:
     """
     A heap of nodes ordered by distance to a given node.
     """
@@ -47,7 +47,7 @@ class NodeHeap(object):
         self.contacted = set()
         self.maxsize = maxsize
 
-    def remove(self, peerIDs):
+    def remove(self, peers):
         """
         Remove a list of peer ids from this heap.  Note that while this
         heap retains a constant visible size (based on the iterator), it's
@@ -55,34 +55,32 @@ class NodeHeap(object):
         removal of nodes may not change the visible size as previously added
         nodes suddenly become visible.
         """
-        peerIDs = set(peerIDs)
-        if len(peerIDs) == 0:
+        peers = set(peers)
+        if not peers:
             return
         nheap = []
         for distance, node in self.heap:
-            if node.id not in peerIDs:
+            if node.id not in peers:
                 heapq.heappush(nheap, (distance, node))
         self.heap = nheap
 
-    def getNodeById(self, node_id):
+    def get_node(self, node_id):
         for _, node in self.heap:
             if node.id == node_id:
                 return node
         return None
 
-    def allBeenContacted(self):
-        return len(self.getUncontacted()) == 0
+    def have_contacted_all(self):
+        return len(self.get_uncontacted()) == 0
 
-    def getIDs(self):
+    def get_ids(self):
         return [n.id for n in self]
 
-    def markContacted(self, node):
+    def mark_contacted(self, node):
         self.contacted.add(node.id)
 
     def popleft(self):
-        if len(self) > 0:
-            return heapq.heappop(self.heap)[1]
-        return None
+        return heapq.heappop(self.heap)[1] if self else None
 
     def push(self, nodes):
         """
@@ -95,7 +93,7 @@ class NodeHeap(object):
 
         for node in nodes:
             if node not in self:
-                distance = self.node.distanceTo(node)
+                distance = self.node.distance_to(node)
                 heapq.heappush(self.heap, (distance, node))
 
     def __len__(self):
@@ -106,10 +104,10 @@ class NodeHeap(object):
         return iter(map(itemgetter(1), nodes))
 
     def __contains__(self, node):
-        for _, n in self.heap:
-            if node.id == n.id:
+        for _, other in self.heap:
+            if node.id == other.id:
                 return True
         return False
 
-    def getUncontacted(self):
+    def get_uncontacted(self):
         return [n for n in self if n.id not in self.contacted]

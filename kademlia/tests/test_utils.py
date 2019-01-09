@@ -1,36 +1,36 @@
 import hashlib
 import unittest
 
-from kademlia.utils import digest, sharedPrefix, OrderedSet
+from kademlia.utils import digest, shared_prefix, OrderedSet
 
 
 class UtilsTest(unittest.TestCase):
     def test_digest(self):
-        d = hashlib.sha1(b'1').digest()
-        self.assertEqual(d, digest(1))
+        dig = hashlib.sha1(b'1').digest()
+        self.assertEqual(dig, digest(1))
 
-        d = hashlib.sha1(b'another').digest()
-        self.assertEqual(d, digest('another'))
+        dig = hashlib.sha1(b'another').digest()
+        self.assertEqual(dig, digest('another'))
 
-    def test_sharedPrefix(self):
+    def test_shared_prefix(self):
         args = ['prefix', 'prefixasdf', 'prefix', 'prefixxxx']
-        self.assertEqual(sharedPrefix(args), 'prefix')
+        self.assertEqual(shared_prefix(args), 'prefix')
 
         args = ['p', 'prefixasdf', 'prefix', 'prefixxxx']
-        self.assertEqual(sharedPrefix(args), 'p')
+        self.assertEqual(shared_prefix(args), 'p')
 
         args = ['one', 'two']
-        self.assertEqual(sharedPrefix(args), '')
+        self.assertEqual(shared_prefix(args), '')
 
         args = ['hi']
-        self.assertEqual(sharedPrefix(args), 'hi')
+        self.assertEqual(shared_prefix(args), 'hi')
 
 
 class OrderedSetTest(unittest.TestCase):
     def test_order(self):
-        o = OrderedSet()
-        o.push('1')
-        o.push('1')
-        o.push('2')
-        o.push('1')
-        self.assertEqual(o, ['2', '1'])
+        oset = OrderedSet()
+        oset.push('1')
+        oset.push('1')
+        oset.push('2')
+        oset.push('1')
+        self.assertEqual(oset, ['2', '1'])

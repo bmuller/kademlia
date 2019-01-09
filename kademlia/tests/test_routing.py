@@ -7,53 +7,53 @@ from kademlia.tests.utils import mknode, FakeProtocol
 class KBucketTest(unittest.TestCase):
     def test_split(self):
         bucket = KBucket(0, 10, 5)
-        bucket.addNode(mknode(intid=5))
-        bucket.addNode(mknode(intid=6))
+        bucket.add_node(mknode(intid=5))
+        bucket.add_node(mknode(intid=6))
         one, two = bucket.split()
         self.assertEqual(len(one), 1)
         self.assertEqual(one.range, (0, 5))
         self.assertEqual(len(two), 1)
         self.assertEqual(two.range, (6, 10))
 
-    def test_addNode(self):
+    def test_add_node(self):
         # when full, return false
         bucket = KBucket(0, 10, 2)
-        self.assertTrue(bucket.addNode(mknode()))
-        self.assertTrue(bucket.addNode(mknode()))
-        self.assertFalse(bucket.addNode(mknode()))
+        self.assertTrue(bucket.add_node(mknode()))
+        self.assertTrue(bucket.add_node(mknode()))
+        self.assertFalse(bucket.add_node(mknode()))
         self.assertEqual(len(bucket), 2)
 
         # make sure when a node is double added it's put at the end
         bucket = KBucket(0, 10, 3)
         nodes = [mknode(), mknode(), mknode()]
         for node in nodes:
-            bucket.addNode(node)
-        for index, node in enumerate(bucket.getNodes()):
+            bucket.add_node(node)
+        for index, node in enumerate(bucket.get_nodes()):
             self.assertEqual(node, nodes[index])
 
-    def test_inRange(self):
+    def test_in_range(self):
         bucket = KBucket(0, 10, 10)
-        self.assertTrue(bucket.hasInRange(mknode(intid=5)))
-        self.assertFalse(bucket.hasInRange(mknode(intid=11)))
-        self.assertTrue(bucket.hasInRange(mknode(intid=10)))
-        self.assertTrue(bucket.hasInRange(mknode(intid=0)))
+        self.assertTrue(bucket.has_in_range(mknode(intid=5)))
+        self.assertFalse(bucket.has_in_range(mknode(intid=11)))
+        self.assertTrue(bucket.has_in_range(mknode(intid=10)))
+        self.assertTrue(bucket.has_in_range(mknode(intid=0)))
 
 
 class RoutingTableTest(unittest.TestCase):
     def setUp(self):
-        self.id = mknode().id
+        self.id = mknode().id  # pylint: disable=invalid-name
         self.protocol = FakeProtocol(self.id)
         self.router = self.protocol.router
 
-    def test_addContact(self):
-        self.router.addContact(mknode())
+    def test_add_contact(self):
+        self.router.add_contact(mknode())
         self.assertTrue(len(self.router.buckets), 1)
         self.assertTrue(len(self.router.buckets[0].nodes), 1)
 
 
 class TableTraverserTest(unittest.TestCase):
     def setUp(self):
-        self.id = mknode().id
+        self.id = mknode().id  # pylint: disable=invalid-name
         self.protocol = FakeProtocol(self.id)
         self.router = self.protocol.router
 
@@ -70,8 +70,8 @@ class TableTraverserTest(unittest.TestCase):
         buckets = []
         for i in range(5):
             bucket = KBucket(2 * i, 2 * i + 1, 2)
-            bucket.addNode(nodes[2 * i])
-            bucket.addNode(nodes[2 * i + 1])
+            bucket.add_node(nodes[2 * i])
+            bucket.add_node(nodes[2 * i + 1])
             buckets.append(bucket)
 
         # replace router's bucket with our test buckets

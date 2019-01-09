@@ -13,10 +13,11 @@ from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
 
-log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-class Server(object):
+# pylint: disable=too-many-instance-attributes
+class Server:
     """
     High level view of a node instance.  This is the object that should be
     created to start listening as an active node on the network.
@@ -83,22 +84,22 @@ class Server(object):
         Refresh buckets that haven't had any lookups in the last hour
         (per section 2.3 of the paper).
         """
-        ds = []
-        for node_id in self.protocol.getRefreshIDs():
+        results = []
+        for node_id in self.protocol.get_refresh_ids():
             node = Node(node_id)
-            nearest = self.protocol.router.findNeighbors(node, self.alpha)
+            nearest = self.protocol.router.find_neighbors(node, self.alpha)
             spider = NodeSpiderCrawl(self.protocol, node, nearest,
                                      self.ksize, self.alpha)
-            ds.append(spider.find())
+            results.append(spider.find())
 
         # do our crawling
-        await asyncio.gather(*ds)
+        await asyncio.gather(*results)
 
         # now republish keys older than one hour
-        for dkey, value in self.storage.iteritemsOlderThan(3600):
+        for dkey, value in self.storage.iter_older_than(3600):
             await self.set_digest(dkey, value)
 
-    def bootstrappableNeighbors(self):
+    def bootstrappable_neighbors(self):
         """
         Get a :class:`list` of (ip, port) :class:`tuple` pairs suitable for
         use as an argument to the bootstrap method.
@@ -108,7 +109,7 @@ class Server(object):
         storing them if this server is going down for a while.  When it comes
         back up, the list of nodes can be used to bootstrap.
         """
-        neighbors = self.protocol.router.findNeighbors(self.node)
+        neighbors = self.protocol.router.find_neighbors(self.node)
         return [tuple(n)[-2:] for n in neighbors]
 
     async def bootstrap(self, addrs):
@@ -145,8 +146,8 @@ class Server(object):
         if self.storage.get(dkey) is not None:
             return self.storage.get(dkey)
         node = Node(dkey)
-        nearest = self.protocol.router.findNeighbors(node)
-        if len(nearest) == 0:
+        nearest = self.protocol.router.find_neighbors(node)
+        if not nearest:
             log.warning("There are no known neighbors to get key %s", key)
             return None
         spider = ValueSpiderCrawl(self.protocol, node, nearest,
@@ -172,8 +173,8 @@ class Server(object):
         """
         node = Node(dkey)
 
-        nearest = self.protocol.router.findNeighbors(node)
-        if len(nearest) == 0:
+        nearest = self.protocol.router.find_neighbors(node)
+        if not nearest:
             log.warning("There are no known neighbors to set key %s",
                         dkey.hex())
             return False
@@ -184,14 +185,14 @@ class Server(object):
         log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
 
         # if this node is close too, then store here as well
-        biggest = max([n.distanceTo(node) for n in nodes])
-        if self.node.distanceTo(node) < biggest:
+        biggest = max([n.distance_to(node) for n in nodes])
+        if self.node.distance_to(node) < biggest:
             self.storage[dkey] = value
-        ds = [self.protocol.callStore(n, dkey, value) for n in nodes]
+        results = [self.protocol.call_store(n, dkey, value) for n in nodes]
         # return true only if at least one store call succeeded
-        return any(await asyncio.gather(*ds))
+        return any(await asyncio.gather(*results))
 
-    def saveState(self, fname):
+    def save_state(self, fname):
         """
         Save the state of this node (the alpha/ksize/id/immediate neighbors)
         to a cache file with the given fname.
@@ -201,29 +202,29 @@ class Server(object):
             'ksize': self.ksize,
             'alpha': self.alpha,
             'id': self.node.id,
-            'neighbors': self.bootstrappableNeighbors()
+            'neighbors': self.bootstrappable_neighbors()
         }
-        if len(data['neighbors']) == 0:
+        if not data['neighbors']:
             log.warning("No known neighbors, so not writing to cache.")
             return
-        with open(fname, 'wb') as f:
-            pickle.dump(data, f)
+        with open(fname, 'wb') as file:
+            pickle.dump(data, file)
 
     @classmethod
-    def loadState(self, fname):
+    def load_state(cls, fname):
         """
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
         from a cache file with the given fname.
         """
         log.info("Loading state from %s", fname)
-        with open(fname, 'rb') as f:
-            data = pickle.load(f)
-        s = Server(data['ksize'], data['alpha'], data['id'])
-        if len(data['neighbors']) > 0:
-            s.bootstrap(data['neighbors'])
-        return s
+        with open(fname, 'rb') as file:
+            data = pickle.load(file)
+        svr = Server(data['ksize'], data['alpha'], data['id'])
+        if data['neighbors']:
+            svr.bootstrap(data['neighbors'])
+        return svr
 
-    def saveStateRegularly(self, fname, frequency=600):
+    def save_state_regularly(self, fname, frequency=600):
         """
         Save the state of node with a given regularity to the given
         filename.
@@ -233,10 +234,10 @@ class Server(object):
             frequency: Frequency in seconds that the state should be saved.
                         By default, 10 minutes.
         """
-        self.saveState(fname)
+        self.save_state(fname)
         loop = asyncio.get_event_loop()
         self.save_state_loop = loop.call_later(frequency,
-                                               self.saveStateRegularly,
+                                               self.save_state_regularly,
                                                fname,
                                                frequency)
 
@@ -246,13 +247,11 @@ def check_dht_value_type(value):
     Checks to see if the type of the value is a valid type for
     placing in the dht.
     """
-    typeset = set(
-        [
-            int,
-            float,
-            bool,
-            str,
-            bytes,
-        ]
-    )
-    return type(value) in typeset
+    typeset = [
+        int,
+        float,
+        bool,
+        str,
+        bytes
+    ]
+    return type(value) in typeset  # pylint: disable=unidiomatic-typecheck

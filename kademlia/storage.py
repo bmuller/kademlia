@@ -28,7 +28,7 @@ class IStorage:
         """
         raise NotImplementedError
 
-    def iteritemsOlderThan(self, secondsOld):
+    def iter_older_than(self, seconds_old):
         """
         Return the an iterator over (key, value) tuples for items older
         than the given secondsOld.
@@ -57,7 +57,7 @@ class ForgetfulStorage(IStorage):
         self.cull()
 
     def cull(self):
-        for _, _ in self.iteritemsOlderThan(self.ttl):
+        for _, _ in self.iter_older_than(self.ttl):
             self.data.popitem(last=False)
 
     def get(self, key, default=None):
@@ -70,27 +70,23 @@ class ForgetfulStorage(IStorage):
         self.cull()
         return self.data[key][1]
 
-    def __iter__(self):
-        self.cull()
-        return iter(self.data)
-
     def __repr__(self):
         self.cull()
         return repr(self.data)
 
-    def iteritemsOlderThan(self, secondsOld):
-        minBirthday = time.monotonic() - secondsOld
-        zipped = self._tripleIterable()
-        matches = takewhile(lambda r: minBirthday >= r[1], zipped)
+    def iter_older_than(self, seconds_old):
+        min_birthday = time.monotonic() - seconds_old
+        zipped = self._triple_iter()
+        matches = takewhile(lambda r: min_birthday >= r[1], zipped)
         return list(map(operator.itemgetter(0, 2), matches))
 
-    def _tripleIterable(self):
+    def _triple_iter(self):
         ikeys = self.data.keys()
         ibirthday = map(operator.itemgetter(0), self.data.values())
         ivalues = map(operator.itemgetter(1), self.data.values())
         return zip(ikeys, ibirthday, ivalues)
 
-    def items(self):
+    def __iter__(self):
         self.cull()
         ikeys = self.data.keys()
         ivalues = map(operator.itemgetter(1), self.data.values())

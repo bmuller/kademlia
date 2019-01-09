@@ -8,31 +8,31 @@ from kademlia.tests.utils import mknode
 
 
 class NodeTest(unittest.TestCase):
-    def test_longID(self):
+    def test_long_id(self):
         rid = hashlib.sha1(str(random.getrandbits(255)).encode()).digest()
-        n = Node(rid)
-        self.assertEqual(n.long_id, int(rid.hex(), 16))
+        node = Node(rid)
+        self.assertEqual(node.long_id, int(rid.hex(), 16))
 
-    def test_distanceCalculation(self):
+    def test_distance_calculation(self):
         ridone = hashlib.sha1(str(random.getrandbits(255)).encode())
         ridtwo = hashlib.sha1(str(random.getrandbits(255)).encode())
 
         shouldbe = int(ridone.hexdigest(), 16) ^ int(ridtwo.hexdigest(), 16)
         none = Node(ridone.digest())
         ntwo = Node(ridtwo.digest())
-        self.assertEqual(none.distanceTo(ntwo), shouldbe)
+        self.assertEqual(none.distance_to(ntwo), shouldbe)
 
 
 class NodeHeapTest(unittest.TestCase):
-    def test_maxSize(self):
-        n = NodeHeap(mknode(intid=0), 3)
-        self.assertEqual(0, len(n))
+    def test_max_size(self):
+        node = NodeHeap(mknode(intid=0), 3)
+        self.assertEqual(0, len(node))
 
-        for d in range(10):
-            n.push(mknode(intid=d))
-        self.assertEqual(3, len(n))
+        for digit in range(10):
+            node.push(mknode(intid=digit))
+        self.assertEqual(3, len(node))
 
-        self.assertEqual(3, len(list(n)))
+        self.assertEqual(3, len(list(node)))
 
     def test_iteration(self):
         heap = NodeHeap(mknode(intid=0), 5)
