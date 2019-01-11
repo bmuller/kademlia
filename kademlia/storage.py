@@ -2,44 +2,45 @@ import time
 from itertools import takewhile
 import operator
 from collections import OrderedDict
+from abc import abstractmethod, ABC
 
 
-class IStorage:
+class IStorage(ABC):
     """
     Local storage for this node.
     IStorage implementations of get must return the same type as put in by set
     """
 
+    @abstractmethod
     def __setitem__(self, key, value):
         """
         Set a key to the given value.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def __getitem__(self, key):
         """
         Get the given key.  If item doesn't exist, raises C{KeyError}
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def get(self, key, default=None):
         """
         Get given key.  If not found, return default.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def iter_older_than(self, seconds_old):
         """
         Return the an iterator over (key, value) tuples for items older
         than the given secondsOld.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def __iter__(self):
         """
         Get the iterator for this storage, should yield tuple of (key, value)
         """
-        raise NotImplementedError
 
 
 class ForgetfulStorage(IStorage):
