@@ -58,7 +58,7 @@ class Server:
     def _create_protocol(self):
         return self.protocol_class(self.node, self.storage, self.ksize)
 
-    def listen(self, port, interface='0.0.0.0'):
+    async def listen(self, port, interface='0.0.0.0'):
         """
         Start listening on the given port.
 
@@ -69,7 +69,7 @@ class Server:
                                                local_addr=(interface, port))
         log.info("Node %i listening on %s:%i",
                  self.node.long_id, interface, port)
-        self.transport, self.protocol = loop.run_until_complete(listen)
+        self.transport, self.protocol = await listen
         # finally, schedule refreshing table
         self.refresh_table()
 

@@ -10,11 +10,12 @@ log = logging.getLogger('kademlia')
 log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
-server = Server()
-server.listen(8468)
 
 loop = asyncio.get_event_loop()
 loop.set_debug(True)
+
+server = Server()
+loop.run_until_complete(server.listen(8468))
 
 try:
     loop.run_forever()
