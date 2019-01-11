@@ -1,4 +1,3 @@
-import unittest
 import asyncio
 
 import pytest
@@ -20,9 +19,9 @@ async def test_storing(bootstrap_node):
     server.stop()
 
 
-class SwappableProtocolTests(unittest.TestCase):
+class TestSwappableProtocol:
 
-    def test_default_protocol(self):
+    def test_default_protocol(self):  # pylint: disable=no-self-use
         """
         An ordinary Server object will initially not have a protocol, but will
         have a KademliaProtocol object as its protocol after its listen()
@@ -30,12 +29,12 @@ class SwappableProtocolTests(unittest.TestCase):
         """
         loop = asyncio.get_event_loop()
         server = Server()
-        self.assertIsNone(server.protocol)
+        assert server.protocol is None
         loop.run_until_complete(server.listen(8469))
-        self.assertIsInstance(server.protocol, KademliaProtocol)
+        assert isinstance(server.protocol, KademliaProtocol)
         server.stop()
 
-    def test_custom_protocol(self):
+    def test_custom_protocol(self):  # pylint: disable=no-self-use
         """
         A subclass of Server which overrides the protocol_class attribute will
         have an instance of that class as its protocol after its listen()
@@ -53,11 +52,11 @@ class SwappableProtocolTests(unittest.TestCase):
         loop = asyncio.get_event_loop()
         server = Server()
         loop.run_until_complete(server.listen(8469))
-        self.assertNotIsInstance(server.protocol, CoconutProtocol)
+        assert not isinstance(server.protocol, CoconutProtocol)
         server.stop()
 
         # ...but our custom server does.
         husk_server = HuskServer()
         loop.run_until_complete(husk_server.listen(8469))
-        self.assertIsInstance(husk_server.protocol, CoconutProtocol)
+        assert isinstance(husk_server.protocol, CoconutProtocol)
         husk_server.stop()
