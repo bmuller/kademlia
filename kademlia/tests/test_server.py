@@ -1,4 +1,5 @@
 import unittest
+import asyncio
 
 from kademlia.network import Server
 from kademlia.protocol import KademliaProtocol
@@ -12,9 +13,10 @@ class SwappableProtocolTests(unittest.TestCase):
         have a KademliaProtocol object as its protocol after its listen()
         method is called.
         """
+        loop = asyncio.get_event_loop()
         server = Server()
         self.assertIsNone(server.protocol)
-        server.listen(8469)
+        loop.run_until_complete(server.listen(8469))
         self.assertIsInstance(server.protocol, KademliaProtocol)
         server.stop()
 
@@ -33,13 +35,14 @@ class SwappableProtocolTests(unittest.TestCase):
             protocol_class = CoconutProtocol
 
         # An ordinary server does NOT have a CoconutProtocol as its protocol...
+        loop = asyncio.get_event_loop()
         server = Server()
-        server.listen(8469)
+        loop.run_until_complete(server.listen(8469))
         self.assertNotIsInstance(server.protocol, CoconutProtocol)
         server.stop()
 
         # ...but our custom server does.
         husk_server = HuskServer()
-        husk_server.listen(8469)
+        loop.run_until_complete(husk_server.listen(8469))
         self.assertIsInstance(husk_server.protocol, CoconutProtocol)
         husk_server.stop()

@@ -19,7 +19,7 @@ loop = asyncio.get_event_loop()
 loop.set_debug(True)
 
 server = Server()
-server.listen(8469)
+loop.run_until_complete(server.listen(8469))
 bootstrap_node = (sys.argv[1], int(sys.argv[2]))
 loop.run_until_complete(server.bootstrap([bootstrap_node]))
 result = loop.run_until_complete(server.get(sys.argv[3]))
