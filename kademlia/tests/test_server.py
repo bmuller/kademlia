@@ -1,8 +1,23 @@
 import unittest
 import asyncio
 
+import pytest
+
 from kademlia.network import Server
 from kademlia.protocol import KademliaProtocol
+
+
+@pytest.mark.asyncio
+async def test_storing(bootstrap_node):
+    server = Server()
+    await server.listen(bootstrap_node[1] + 1)
+    await server.bootstrap([bootstrap_node])
+    await server.set('key', 'value')
+    result = await server.get('key')
+
+    assert result == 'value'
+
+    server.stop()
 
 
 class SwappableProtocolTests(unittest.TestCase):
