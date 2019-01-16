@@ -3,6 +3,7 @@ import time
 import operator
 import asyncio
 
+from itertools import chain
 from collections import OrderedDict
 from kademlia.utils import OrderedSet, shared_prefix, bytes_to_bit_string
 
@@ -25,9 +26,10 @@ class KBucket:
         midpoint = (self.range[0] + self.range[1]) / 2
         one = KBucket(self.range[0], midpoint, self.ksize)
         two = KBucket(midpoint + 1, self.range[1], self.ksize)
-        for node in self.nodes.values():
+        for node in chain(self.nodes.values(), self.replacement_nodes):
             bucket = one if node.long_id <= midpoint else two
-            bucket.nodes[node.id] = node
+            bucket.add_node(node)
+
         return (one, two)
 
     def remove_node(self, node):
