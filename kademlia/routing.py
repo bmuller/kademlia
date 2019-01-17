@@ -5,14 +5,14 @@ import asyncio
 
 from itertools import chain
 from collections import OrderedDict
-from kademlia.utils import OrderedSet, shared_prefix, bytes_to_bit_string
+from kademlia.utils import shared_prefix, bytes_to_bit_string
 
 
 class KBucket:
     def __init__(self, rangeLower, rangeUpper, ksize):
         self.range = (rangeLower, rangeUpper)
         self.nodes = OrderedDict()
-        self.replacement_nodes = OrderedSet()
+        self.replacement_nodes = OrderedDict()
         self.touch_last_updated()
         self.ksize = ksize
 
@@ -26,21 +26,23 @@ class KBucket:
         midpoint = (self.range[0] + self.range[1]) / 2
         one = KBucket(self.range[0], midpoint, self.ksize)
         two = KBucket(midpoint + 1, self.range[1], self.ksize)
-        for node in chain(self.nodes.values(), self.replacement_nodes):
+        nodes = chain(self.nodes.values(), self.replacement_nodes.values())
+        for node in nodes:
             bucket = one if node.long_id <= midpoint else two
             bucket.add_node(node)
 
         return (one, two)
 
     def remove_node(self, node):
-        if node.id not in self.nodes:
-            return
+        if node.id in self.replacement_nodes:
+            del self.replacement_nodes[node.id]
 
-        # delete node, and see if we can add a replacement
-        del self.nodes[node.id]
-        if self.replacement_nodes:
-            newnode = self.replacement_nodes.pop()
-            self.nodes[newnode.id] = newnode
+        if node.id in self.nodes:
+            del self.nodes[node.id]
+
+            if self.replacement_nodes:
+                newnode_id, newnode = self.replacement_nodes.popitem()
+                self.nodes[newnode_id] = newnode
 
     def has_in_range(self, node):
         return self.range[0] <= node.long_id <= self.range[1]
@@ -62,7 +64,9 @@ class KBucket:
         elif len(self) < self.ksize:
             self.nodes[node.id] = node
         else:
-            self.replacement_nodes.push(node)
+            if node.id in self.replacement_nodes:
+                del self.replacement_nodes[node.id]
+            self.replacement_nodes[node.id] = node
             return False
         return True
 

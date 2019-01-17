@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from kademlia.utils import digest, shared_prefix, OrderedSet
+from kademlia.utils import digest, shared_prefix
 
 
 class UtilsTest(unittest.TestCase):
@@ -24,13 +24,3 @@ class UtilsTest(unittest.TestCase):
 
         args = ['hi']
         self.assertEqual(shared_prefix(args), 'hi')
-
-
-class OrderedSetTest(unittest.TestCase):
-    def test_order(self):
-        oset = OrderedSet()
-        oset.push('1')
-        oset.push('1')
-        oset.push('2')
-        oset.push('1')
-        self.assertEqual(oset, ['2', '1'])
