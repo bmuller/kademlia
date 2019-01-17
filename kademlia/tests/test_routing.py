@@ -1,5 +1,6 @@
 import unittest
 
+from random import shuffle
 from kademlia.routing import KBucket, TableTraverser
 from kademlia.tests.utils import mknode, FakeProtocol
 
@@ -30,6 +31,31 @@ class KBucketTest(unittest.TestCase):
             bucket.add_node(node)
         for index, node in enumerate(bucket.get_nodes()):
             self.assertEqual(node, nodes[index])
+
+    def test_remove_node(self):
+        k = 3
+        bucket = KBucket(0, 10, k)
+        nodes = [mknode() for _ in range(10)]
+        for node in nodes:
+            bucket.add_node(node)
+
+        replacement_nodes = bucket.replacement_nodes
+        self.assertEqual(list(bucket.nodes.values()), nodes[:k])
+        self.assertEqual(list(replacement_nodes.values()), nodes[k:])
+
+        bucket.remove_node(nodes.pop())
+        self.assertEqual(list(bucket.nodes.values()), nodes[:k])
+        self.assertEqual(list(replacement_nodes.values()), nodes[k:])
+
+        bucket.remove_node(nodes.pop(0))
+        self.assertEqual(list(bucket.nodes.values()), nodes[:k-1] + nodes[-1:])
+        self.assertEqual(list(replacement_nodes.values()), nodes[k-1:-1])
+
+        shuffle(nodes)
+        for node in nodes:
+            bucket.remove_node(node)
+        self.assertEqual(len(bucket), 0)
+        self.assertEqual(len(replacement_nodes), 0)
 
     def test_in_range(self):
         bucket = KBucket(0, 10, 10)
