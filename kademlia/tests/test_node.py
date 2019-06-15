@@ -1,56 +1,54 @@
-import unittest
 import random
 import hashlib
 
 
 from kademlia.node import Node, NodeHeap
-from kademlia.tests.utils import mknode
 
 
-class NodeTest(unittest.TestCase):
-    def test_long_id(self):
+class TestNode:
+    def test_long_id(self):  # pylint: disable=no-self-use
         rid = hashlib.sha1(str(random.getrandbits(255)).encode()).digest()
         node = Node(rid)
-        self.assertEqual(node.long_id, int(rid.hex(), 16))
+        assert node.long_id == int(rid.hex(), 16)
 
-    def test_distance_calculation(self):
+    def test_distance_calculation(self):  # pylint: disable=no-self-use
         ridone = hashlib.sha1(str(random.getrandbits(255)).encode())
         ridtwo = hashlib.sha1(str(random.getrandbits(255)).encode())
 
         shouldbe = int(ridone.hexdigest(), 16) ^ int(ridtwo.hexdigest(), 16)
         none = Node(ridone.digest())
         ntwo = Node(ridtwo.digest())
-        self.assertEqual(none.distance_to(ntwo), shouldbe)
+        assert none.distance_to(ntwo) == shouldbe
 
 
-class NodeHeapTest(unittest.TestCase):
-    def test_max_size(self):
+class TestNodeHeap:
+    def test_max_size(self, mknode):  # pylint: disable=no-self-use
         node = NodeHeap(mknode(intid=0), 3)
-        self.assertEqual(0, len(node))
+        assert not node
 
         for digit in range(10):
             node.push(mknode(intid=digit))
-        self.assertEqual(3, len(node))
 
-        self.assertEqual(3, len(list(node)))
+        assert len(node) == 3
+        assert len(list(node)) == 3
 
-    def test_iteration(self):
+    def test_iteration(self, mknode):  # pylint: disable=no-self-use
         heap = NodeHeap(mknode(intid=0), 5)
         nodes = [mknode(intid=x) for x in range(10)]
         for index, node in enumerate(nodes):
             heap.push(node)
         for index, node in enumerate(heap):
-            self.assertEqual(index, node.long_id)
-            self.assertTrue(index < 5)
+            assert index == node.long_id
+            assert index < 5
 
-    def test_remove(self):
+    def test_remove(self, mknode):  # pylint: disable=no-self-use
         heap = NodeHeap(mknode(intid=0), 5)
         nodes = [mknode(intid=x) for x in range(10)]
         for node in nodes:
             heap.push(node)
 
         heap.remove([nodes[0].id, nodes[1].id])
-        self.assertEqual(len(list(heap)), 5)
+        assert len(list(heap)) == 5
         for index, node in enumerate(heap):
-            self.assertEqual(index + 2, node.long_id)
-            self.assertTrue(index < 5)
+            assert index + 2 == node.long_id
+            assert index < 5

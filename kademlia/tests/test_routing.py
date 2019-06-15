@@ -1,28 +1,25 @@
-import unittest
-
 from random import shuffle
 from kademlia.routing import KBucket, TableTraverser
-from kademlia.tests.utils import mknode, FakeProtocol
 
 
-class KBucketTest(unittest.TestCase):
-    def test_split(self):
+class TestKBucket:
+    def test_split(self, mknode):  # pylint: disable=no-self-use
         bucket = KBucket(0, 10, 5)
         bucket.add_node(mknode(intid=5))
         bucket.add_node(mknode(intid=6))
         one, two = bucket.split()
-        self.assertEqual(len(one), 1)
-        self.assertEqual(one.range, (0, 5))
-        self.assertEqual(len(two), 1)
-        self.assertEqual(two.range, (6, 10))
+        assert len(one) == 1
+        assert one.range == (0, 5)
+        assert len(two) == 1
+        assert two.range == (6, 10)
 
-    def test_add_node(self):
+    def test_add_node(self, mknode):  # pylint: disable=no-self-use
         # when full, return false
         bucket = KBucket(0, 10, 2)
-        self.assertTrue(bucket.add_node(mknode()))
-        self.assertTrue(bucket.add_node(mknode()))
-        self.assertFalse(bucket.add_node(mknode()))
-        self.assertEqual(len(bucket), 2)
+        assert bucket.add_node(mknode()) is True
+        assert bucket.add_node(mknode()) is True
+        assert bucket.add_node(mknode()) is False
+        assert len(bucket) == 2
 
         # make sure when a node is double added it's put at the end
         bucket = KBucket(0, 10, 3)
@@ -30,9 +27,9 @@ class KBucketTest(unittest.TestCase):
         for node in nodes:
             bucket.add_node(node)
         for index, node in enumerate(bucket.get_nodes()):
-            self.assertEqual(node, nodes[index])
+            assert node == nodes[index]
 
-    def test_remove_node(self):
+    def test_remove_node(self, mknode):  # pylint: disable=no-self-use
         k = 3
         bucket = KBucket(0, 10, k)
         nodes = [mknode() for _ in range(10)]
@@ -40,50 +37,44 @@ class KBucketTest(unittest.TestCase):
             bucket.add_node(node)
 
         replacement_nodes = bucket.replacement_nodes
-        self.assertEqual(list(bucket.nodes.values()), nodes[:k])
-        self.assertEqual(list(replacement_nodes.values()), nodes[k:])
+        assert list(bucket.nodes.values()) == nodes[:k]
+        assert list(replacement_nodes.values()) == nodes[k:]
 
         bucket.remove_node(nodes.pop())
-        self.assertEqual(list(bucket.nodes.values()), nodes[:k])
-        self.assertEqual(list(replacement_nodes.values()), nodes[k:])
+        assert list(bucket.nodes.values()) == nodes[:k]
+        assert list(replacement_nodes.values()) == nodes[k:]
 
         bucket.remove_node(nodes.pop(0))
-        self.assertEqual(list(bucket.nodes.values()), nodes[:k-1] + nodes[-1:])
-        self.assertEqual(list(replacement_nodes.values()), nodes[k-1:-1])
+        assert list(bucket.nodes.values()) == nodes[:k-1] + nodes[-1:]
+        assert list(replacement_nodes.values()) == nodes[k-1:-1]
 
         shuffle(nodes)
         for node in nodes:
             bucket.remove_node(node)
-        self.assertEqual(len(bucket), 0)
-        self.assertEqual(len(replacement_nodes), 0)
+        assert not bucket
+        assert not replacement_nodes
 
-    def test_in_range(self):
+    def test_in_range(self, mknode):  # pylint: disable=no-self-use
         bucket = KBucket(0, 10, 10)
-        self.assertTrue(bucket.has_in_range(mknode(intid=5)))
-        self.assertFalse(bucket.has_in_range(mknode(intid=11)))
-        self.assertTrue(bucket.has_in_range(mknode(intid=10)))
-        self.assertTrue(bucket.has_in_range(mknode(intid=0)))
+        assert bucket.has_in_range(mknode(intid=5)) is True
+        assert bucket.has_in_range(mknode(intid=11)) is False
+        assert bucket.has_in_range(mknode(intid=10)) is True
+        assert bucket.has_in_range(mknode(intid=0)) is True
 
 
-class RoutingTableTest(unittest.TestCase):
-    def setUp(self):
-        self.id = mknode().id  # pylint: disable=invalid-name
-        self.protocol = FakeProtocol(self.id)
-        self.router = self.protocol.router
-
-    def test_add_contact(self):
-        self.router.add_contact(mknode())
-        self.assertTrue(len(self.router.buckets), 1)
-        self.assertTrue(len(self.router.buckets[0].nodes), 1)
+# pylint: disable=too-few-public-methods
+class TestRoutingTable:
+    # pylint: disable=no-self-use
+    def test_add_contact(self, fake_server, mknode):
+        fake_server.router.add_contact(mknode())
+        assert len(fake_server.router.buckets) == 1
+        assert len(fake_server.router.buckets[0].nodes) == 1
 
 
-class TableTraverserTest(unittest.TestCase):
-    def setUp(self):
-        self.id = mknode().id  # pylint: disable=invalid-name
-        self.protocol = FakeProtocol(self.id)
-        self.router = self.protocol.router
-
-    def test_iteration(self):
+# pylint: disable=too-few-public-methods
+class TestTableTraverser:
+    # pylint: disable=no-self-use
+    def test_iteration(self, fake_server, mknode):
         """
         Make 10 nodes, 5 buckets, two nodes add to one bucket in order,
         All buckets: [node0, node1], [node2, node3], [node4, node5],
@@ -101,12 +92,13 @@ class TableTraverserTest(unittest.TestCase):
             buckets.append(bucket)
 
         # replace router's bucket with our test buckets
-        self.router.buckets = buckets
+        fake_server.router.buckets = buckets
 
         # expected nodes order
         expected_nodes = [nodes[5], nodes[4], nodes[3], nodes[2], nodes[7],
                           nodes[6], nodes[1], nodes[0], nodes[9], nodes[8]]
 
         start_node = nodes[4]
-        for index, node in enumerate(TableTraverser(self.router, start_node)):
-            self.assertEqual(node, expected_nodes[index])
+        table_traverser = TableTraverser(fake_server.router, start_node)
+        for index, node in enumerate(table_traverser):
+            assert node == expected_nodes[index]

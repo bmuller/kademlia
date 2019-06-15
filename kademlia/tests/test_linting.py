@@ -1,4 +1,3 @@
-import unittest
 from glob import glob
 
 import pycodestyle
@@ -10,7 +9,7 @@ class LintError(Exception):
     pass
 
 
-class TestCodeLinting(unittest.TestCase):
+class TestCodeLinting:
     # pylint: disable=no-self-use
     def test_pylint(self):
         (stdout, _) = lint.py_run('kademlia', return_std=True)

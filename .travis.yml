@@ -6,4 +6,4 @@ python:
 dist:
   - xenial
 install: pip install . && pip install -r dev-requirements.txt
-script: py.test
+script: pytest
