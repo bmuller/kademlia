@@ -8,3 +8,7 @@ dist
 kademlia.egg-info
 docs/_build
 .coverage
+venv/
+.requirements.lock
+.envrc
+.vscode/
