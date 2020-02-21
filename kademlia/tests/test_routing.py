@@ -13,6 +13,10 @@ class TestKBucket:
         assert len(two) == 1
         assert two.range == (6, 10)
 
+    def test_split_no_overlap(self):  # pylint: disable=no-self-use
+        left, right = KBucket(0, 2 ** 160, 20).split()
+        assert (right.range[0] - left.range[1]) == 1
+
     def test_add_node(self, mknode):  # pylint: disable=no-self-use
         # when full, return false
         bucket = KBucket(0, 10, 2)
