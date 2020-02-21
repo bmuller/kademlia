@@ -211,17 +211,19 @@ class Server:
             pickle.dump(data, file)
 
     @classmethod
-    def load_state(cls, fname):
+    async def load_state(cls, fname, port, interface='0.0.0.0'):
         """
         Load the state of this node (the alpha/ksize/id/immediate neighbors)
-        from a cache file with the given fname.
+        from a cache file with the given fname and then bootstrap the node
+        (using the given port/interface to start listening/bootstrapping).
         """
         log.info("Loading state from %s", fname)
         with open(fname, 'rb') as file:
             data = pickle.load(file)
         svr = Server(data['ksize'], data['alpha'], data['id'])
+        await svr.listen(port, interface)
         if data['neighbors']:
-            svr.bootstrap(data['neighbors'])
+            await svr.bootstrap(data['neighbors'])
         return svr
 
     def save_state_regularly(self, fname, frequency=600):
