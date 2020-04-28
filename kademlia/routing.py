@@ -9,12 +9,13 @@ from kademlia.utils import shared_prefix, bytes_to_bit_string
 
 
 class KBucket:
-    def __init__(self, rangeLower, rangeUpper, ksize):
+    def __init__(self, rangeLower, rangeUpper, ksize, replacementNodeFactor=5):
         self.range = (rangeLower, rangeUpper)
         self.nodes = OrderedDict()
         self.replacement_nodes = OrderedDict()
         self.touch_last_updated()
         self.ksize = ksize
+        self.replacement_node_factor = replacementNodeFactor
 
     def touch_last_updated(self):
         self.last_updated = time.monotonic()
@@ -67,6 +68,9 @@ class KBucket:
             if node.id in self.replacement_nodes:
                 del self.replacement_nodes[node.id]
             self.replacement_nodes[node.id] = node
+            max_replacement_nodes = self.ksize * self.replacement_node_factor
+            while len(self.replacement_nodes) > max_replacement_nodes:
+                self.replacement_nodes.popitem(last=False)
             return False
         return True
 
