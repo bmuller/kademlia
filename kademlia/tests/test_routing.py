@@ -65,6 +65,19 @@ class TestKBucket:
         assert bucket.has_in_range(mknode(intid=10)) is True
         assert bucket.has_in_range(mknode(intid=0)) is True
 
+    def test_replacement_factor(self, mknode):  # pylint: disable=no-self-use
+        k = 3
+        factor = 2
+        bucket = KBucket(0, 10, k, replacementNodeFactor=factor)
+        nodes = [mknode() for _ in range(10)]
+        for node in nodes:
+            bucket.add_node(node)
+
+        replacement_nodes = bucket.replacement_nodes
+        assert len(list(replacement_nodes.values())) == k * factor
+        assert list(replacement_nodes.values()) == nodes[k + 1:]
+        assert nodes[k] not in list(replacement_nodes.values())
+
 
 # pylint: disable=too-few-public-methods
 class TestRoutingTable:
