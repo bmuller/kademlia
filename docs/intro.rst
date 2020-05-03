@@ -26,12 +26,9 @@ Running Tests
 To run tests::
 
   $ pip install -r dev-requirements.txt
-  $ python -m unittest
+  $ pytest
 
 
 Fidelity to Original Paper
 ==========================
 The current implementation should be an accurate implementation of all aspects of the paper except one - in Section 2.3 there is the requirement that the original publisher of a key/value republish it every 24 hours.  This library does not do this (though you can easily do this manually).
-
-
-.. _Twisted: https://twistedmatrix.com

@@ -33,8 +33,8 @@ class Server:
             ksize (int): The k parameter from the paper
             alpha (int): The alpha parameter from the paper
             node_id: The id for this node on the network.
-            storage: An instance that implements
-                     :interface:`~kademlia.storage.IStorage`
+            storage: An instance that implements the interface
+                     :class:`~kademlia.storage.IStorage`
         """
         self.ksize = ksize
         self.alpha = alpha
