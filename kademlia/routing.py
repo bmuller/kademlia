@@ -15,7 +15,7 @@ class KBucket:
         self.replacement_nodes = OrderedDict()
         self.touch_last_updated()
         self.ksize = ksize
-        self.replacement_node_factor = replacementNodeFactor
+        self.max_replacement_nodes = self.ksize * replacementNodeFactor
 
     def touch_last_updated(self):
         self.last_updated = time.monotonic()
@@ -68,8 +68,7 @@ class KBucket:
             if node.id in self.replacement_nodes:
                 del self.replacement_nodes[node.id]
             self.replacement_nodes[node.id] = node
-            max_replacement_nodes = self.ksize * self.replacement_node_factor
-            while len(self.replacement_nodes) > max_replacement_nodes:
+            while len(self.replacement_nodes) > self.max_replacement_nodes:
                 self.replacement_nodes.popitem(last=False)
             return False
         return True
