@@ -73,7 +73,7 @@ class Server:
         # finally, schedule refreshing table
         self.refresh_table()
 
-    def refresh_table(self, interval: float = 3600):
+    def refresh_table(self, interval=3600):
         log.debug("Refreshing routing table")
         asyncio.ensure_future(self._refresh_table())
         loop = asyncio.get_event_loop()
