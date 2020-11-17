@@ -1,10 +1,7 @@
-*.pickle
-*.pid
-_trial_temp
-apidoc
-*.pyc
-build
-dist
-kademlia.egg-info
-docs/_build
 .coverage
+.idea
+venv/
+__pycache__/
+build/
+dist/
+inspectionProfiles/
