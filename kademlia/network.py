@@ -96,8 +96,8 @@ class Server:
         await asyncio.gather(*results)
 
         # now republish keys older than one hour
-        for dkey, value in self.storage.iter_older_than(3600):
-            await self.set_digest(dkey, value)
+        # for dkey, value in self.storage.iter_older_than(3600):
+        #     await self.set_digest(dkey, value)
 
     def bootstrappable_neighbors(self):
         """
@@ -141,7 +141,7 @@ class Server:
             :class:`None` if not found, the value otherwise.
         """
         log.info("Looking up key %s", key)
-        dkey = digest(key)
+        dkey = self.digest_with_dbname_suffix_overwritten(key)
         # if this node has it, return it
         if self.storage.get(dkey) is not None:
             return self.storage.get(dkey)
@@ -163,8 +163,16 @@ class Server:
                 "Value must be of type int, float, bool, str, or bytes"
             )
         log.info("setting '%s' = '%s' on network", key, value)
-        dkey = digest(key)
+        dkey = self.digest_with_dbname_suffix_overwritten(key)
         return await self.set_digest(dkey, value)
+
+    def digest_with_dbname_suffix_overwritten(self, key):
+        dkey = digest(key)
+        sections = key.split('.', 1)
+        if len(sections) != 2 or len(sections[0]) != 4:
+            raise ValueError("key must be of the form [database].[key] and database must be 4 characters")
+        # digest is 20 bytes long; replace last 4 bytes with utf-8 encoded name of db
+        return dkey[:16] + str.encode(sections[0])
 
     async def set_digest(self, dkey, value):
         """

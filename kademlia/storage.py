@@ -3,6 +3,7 @@ from itertools import takewhile
 import operator
 from collections import OrderedDict
 from abc import abstractmethod, ABC
+from keri.db.dbing import Baser
 
 
 class IStorage(ABC):
@@ -41,6 +42,100 @@ class IStorage(ABC):
         """
         Get the iterator for this storage, should yield tuple of (key, value)
         """
+
+class KeriStorage(IStorage):
+    def __init__(self, ttl=604800):
+        self.baser = Baser()
+
+        # TODO this belongs in Keri
+        self.db_mappings = {
+            b'evts.': self.baser.evts,
+            b'dtss.': self.baser.dtss,
+            b'sigs.': self.baser.sigs,
+            b'rcts.': self.baser.rcts,
+            b'ures.': self.baser.ures,
+            b'vrcs.': self.baser.vrcs,
+            b'vres.': self.baser.vres,
+            b'kels.': self.baser.kels,
+            b'pses.': self.baser.pses,
+            b'ooes.': self.baser.ooes,
+            b'dels.': self.baser.dels,
+            b'ldes.': self.baser.ldes
+        }
+
+    def __setitem__(self, key, value):
+        """
+        Set a key to the given value.
+        """
+        db = self._get_baser_db(key)
+
+        try:
+            self.baser.setVal(db, key, value.encode())
+        except Exception as e:
+            print(e)
+
+    def __getitem__(self, key):
+        """
+        Get the given key.  If item doesn't exist, raises C{KeyError}
+        """
+        db = self._get_baser_db(key)
+        try:
+            value = self.baser.getVal(db, key)
+        except Exception as e:
+            print(e)
+        return bytes(value)
+
+    def __repr__(self):
+        return repr(self.baser)
+
+    def get(self, key, default=None):
+        """
+        Get given key.  If not found, return default.
+        """
+        db = self._get_baser_db(key)
+        try:
+            value = self.baser.getVal(db, key)
+        except Exception as e:
+            print(e)
+        return default if value is None else bytes(value)
+
+    def iter_older_than(self, seconds_old):
+        """
+        Return the an iterator over (key, value) tuples for items older
+        than the given secondsOld.
+        """
+        raise NotImplementedError("will implement if necessary for keri")
+        # TODO: if necessary, set time in all values and implement this
+        # self.data[key] = (time.monotonic(), value)
+
+
+    def __iter__(self):
+        """
+        Get the iterator for this storage, should yield tuple of (key, value)
+        """
+
+        # TODO: this only uses the evts database within Baser right now, but will need to look through
+        # all dbs in the future. Determine how to look through ALL key-value pairs in ALL databases with an iterator
+        # object to return here
+        txn = self.baser.env.begin(db=self.db_mappings[b'evts.'], write=False, buffers=True)
+        cursor = txn.cursor()
+        return cursor.iternext(keys=True, values=True)
+
+    def _get_baser_db(self, key):
+        """
+        Ensures the input key is a byte array of the form [database].[key], then returns each portion
+        """
+        if not isinstance(key, bytes):
+            raise ValueError("key must be of type bytes")
+
+        dbbytes = key[16:] + b'.'
+        if len(dbbytes) != 5:
+            raise ValueError("database name should only be 4 bytes")
+
+        if dbbytes not in self.db_mappings:
+            raise ValueError(f"database name {dbbytes} is not a valid database")
+
+        return self.db_mappings[dbbytes]
 
 
 class ForgetfulStorage(IStorage):
