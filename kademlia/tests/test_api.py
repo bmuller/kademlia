@@ -6,6 +6,8 @@ from kademlia.const import *
 from kademlia.generate_aid import gen_nontransferable_serialized_aid, gen_serialized_aid
 
 # integration tests - these require bootstrap.py to be running
+# TODO proper unit tests and move these to a better spot for integration tests
+# TODO proper teardown; use clean db and wipe when done
 
 @pytest.mark.asyncio
 async def test_api():
@@ -17,7 +19,7 @@ async def test_api():
     witness_ip = "signed_ip1"
 
     await publish_then_get_id_from_aid(tc, aid, witness_id)
-    # await publish_then_get_ip_from_id(tc, witness_id, witness_ip)
+    await publish_then_get_ip_from_id(tc, witness_id, witness_ip)
 
 
 async def publish_then_get_id_from_aid(tc, aid, id):

@@ -13,7 +13,6 @@ def run_api(kademlia_node):
 async def get_id_with_aid(aid):
     # todo verify
     id = await node.get('evts.' + aid)
-
     if hasattr(id, 'decode'):
         return jsonify(id.decode())
     return jsonify(id)
@@ -22,13 +21,14 @@ async def get_id_with_aid(aid):
 @app.route('/id/<aid>/<witness_id>', methods=['POST'])
 async def publish_aid_id_mapping(aid, witness_id):
     # todo verify that the aid and witness_id are valid
-
     await node.set('evts.' + aid, witness_id)
     return jsonify("done")
 
 @app.route('/ip/<witness_id>')
 async def get_ip_with_id(witness_id):
     ip = await node.get('evts.' + witness_id)
+    if hasattr(ip, 'decode'):
+        return jsonify(ip.decode())
     return jsonify(ip)
 
 @app.route('/ip/<witness_id>/<witness_ip>', methods=['POST'])
