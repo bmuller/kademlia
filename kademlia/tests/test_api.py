@@ -22,9 +22,9 @@ async def test_api():
 
 async def publish_then_get_id_from_aid(tc, aid, id):
     response = await tc.post(f'/id/{aid}/{id}', json=None)
-    assert response.status_code == 200
     result = await response.get_json()
     assert result == "done"
+    assert response.status_code == 200
 
     response = await tc.get(f'/id/{aid}', json=None)
     assert response.status_code == 200

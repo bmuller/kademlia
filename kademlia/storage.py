@@ -69,10 +69,9 @@ class KeriStorage(IStorage):
         """
         db = self._get_baser_db(key)
 
-        try:
+        if isinstance(value, str):
             self.baser.setVal(db, key, value.encode())
-        except Exception as e:
-            print(e)
+        self.baser.setVal(db, key, value)
 
     def __getitem__(self, key):
         """

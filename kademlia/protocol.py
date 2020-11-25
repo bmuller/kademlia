@@ -80,7 +80,11 @@ class KademliaProtocol(RPCProtocol):
 
     async def call_store(self, node_to_ask, key, value):
         address = (node_to_ask.ip, node_to_ask.port)
-        result = await self.store(address, self.source_node.id, key, value)
+        if isinstance(key, str):
+            key = key.encode()
+        if isinstance(value, str):
+            value = value.encode()
+        result = await self.store(address, self.source_node.id, bytes(key), bytes(value))
         return self.handle_call_response(result, node_to_ask)
 
     def welcome_if_new(self, node):
