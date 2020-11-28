@@ -7,6 +7,7 @@ import nest_asyncio
 
 from kademlia.const import *
 from kademlia.storage import KeriStorage
+from keri.db.dbing import Baser
 
 node = None
 
@@ -23,7 +24,8 @@ async def connect():
     # setup_logging()
 
     # Create a node and start listening on port 5678
-    node = kademlia.network.Server(storage=KeriStorage())
+    storage = KeriStorage(Baser())
+    node = kademlia.network.Server(storage=storage)
     # todo don't expose default kademlia apis OR intercept them with code to disallow entry / verify, etc
     await node.listen(primary_port)
     print("connecting to kademlia network...")
@@ -37,7 +39,7 @@ async def connect():
     # beat = await node.get("evts.heart")
     # assert beat == "beat"
 
-    api.run_api(node)
+    api.run_api(node, storage)
 
 nest_asyncio.apply()
 asyncio.run(connect())

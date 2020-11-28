@@ -3,6 +3,7 @@ import asyncio
 from kademlia.const import *
 from kademlia.network import Server
 from kademlia.storage import KeriStorage
+from keri.db.dbing import Baser
 
 def setup_logging():
     handler = logging.StreamHandler()
@@ -18,7 +19,8 @@ setup_logging()
 loop = asyncio.get_event_loop()
 loop.set_debug(True)
 
-server = Server(storage=KeriStorage())
+storage = KeriStorage(Baser())
+server = Server(storage=storage)
 loop.run_until_complete(server.listen(bootstrap_port))
 
 try:

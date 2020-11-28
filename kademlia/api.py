@@ -1,17 +1,26 @@
-from quart import Quart, jsonify
+from quart import Quart, jsonify, request
 import asyncio
+from keri.core.eventing import Kever, Signer, Serder, CryOneDex, Baser, Siger
+import keri
+import json
 
 app = Quart(__name__)
-node = None
 
-def run_api(kademlia_node):
+node = None
+storage = None
+
+def run_api(kademlia_node, baser):
     global node
     node = kademlia_node
+    storage = baser
+    # kever = Kever( baser=baser)
     app.run(loop=asyncio.get_event_loop())
 
 @app.route('/id/<aid>')
 async def get_id_with_aid(aid):
+    # accepts base64 Kevers
     # todo verify
+
     id = await node.get('evts.' + aid)
     if hasattr(id, 'decode'):
         return jsonify(id.decode())
@@ -20,8 +29,35 @@ async def get_id_with_aid(aid):
 # witness will have to send you a registration event.
 @app.route('/id/<aid>/<witness_id>', methods=['POST'])
 async def publish_aid_id_mapping(aid, witness_id):
+    # body_bytes = await request.get_data()
+    # body = None
+    # try:
+    #     body = json.loads(body_bytes)
+    # except Exception as e:
+    #     return jsonify(e)
+
+    import generate_aid
+    witness_id = generate_aid.gen_nontransferable_serialized_aid()
+    # aid = generate_aid.gen_serialized_aid([witness_id])
+    tser0, tsig0, tsig064 = generate_aid.gen_serialized_aid([witness_id])
+
+    # required_json_params = ["serder", "sigers"]
+    # for param in required_json_params:
+    #     if param not in body:
+    #         raise ValueError(f"request body missing required param {param}")
+
+    # serder = Serder(ked=body["serder"])
+    serder = Serder(ked=tser0.ked)
+    # sb = body["sigers"][0]
+    # sg = Siger(qb64=tsig0.qb64)
+    # s = [tsig0] #Signer(raw=sg.raw, code=sg.code, transferable=True) for s in body["sigers"]]
+    s = [Signer(qb64=tsig064)]
+    # do not use local Baser here because this might be stored remotely on another. Use a temp one only for verifying
+    # kever = Kever(serder=serder, sigers=sigers, baser=Baser())
+    kever = Kever(serder=serder, sigers=[tsig0], baser=Baser())
+
     # todo verify that the aid and witness_id are valid
-    await node.set('evts.' + aid, witness_id)
+    await node.set('evts.' + serder.ked["pre"], witness_id)
     return jsonify("done")
 
 @app.route('/ip/<witness_id>')
@@ -123,11 +159,6 @@ async def publish_id_ip_mapping(witness_id, witness_ip):
 
 
 # create another table in the baser for IP registration messages. DHT 1) manages address space, each node has data
-
-# kademlia has a backend DB, what is it using at the end? or is it a dummy DB which is just a file.
-
-
-# to make it easy, find set method and take whatever is being set, play it to local database, but anything you're registering gets distributed through distribution
 
 # don't store something unless it's been verified. can't cache something unverified
 

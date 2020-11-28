@@ -3,7 +3,6 @@ from itertools import takewhile
 import operator
 from collections import OrderedDict
 from abc import abstractmethod, ABC
-from keri.db.dbing import Baser
 
 
 class IStorage(ABC):
@@ -44,8 +43,8 @@ class IStorage(ABC):
         """
 
 class KeriStorage(IStorage):
-    def __init__(self, ttl=604800):
-        self.baser = Baser()
+    def __init__(self, baser, ttl=604800):
+        self.baser = baser
 
         # TODO this belongs in Keri
         self.db_mappings = {
@@ -129,7 +128,7 @@ class KeriStorage(IStorage):
 
         dbbytes = key[16:] + b'.'
         if len(dbbytes) != 5:
-            raise ValueError("database name should only be 4 bytes")
+            raise ValueError(f"database name should only be 4 bytes but is {dbbytes}")
 
         if dbbytes not in self.db_mappings:
             raise ValueError(f"database name {dbbytes} is not a valid database")

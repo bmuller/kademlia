@@ -100,5 +100,7 @@ def gen_serialized_aid(witnesses):
 
         kever = Kever(serder=tser0, sigers=[tsig0], baser=bsr)  # no error
 
+    
         # return base 64 serialization of signed aid
+        # return tsig0.qb64
         return tsig0.qb64
