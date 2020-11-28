@@ -1,0 +1,4 @@
+[console_scripts]
+keri = keri.cli:main
+kerid = keri.daemon:main
+

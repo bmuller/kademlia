@@ -1,0 +1,7 @@
+netifaces>=0.10.9
+lmdb>=0.98
+pysodium>=0.7.5
+blake3>=0.1.5
+msgpack>=1.0.0
+simplejson>=3.17.0
+cbor2>=5.1.0

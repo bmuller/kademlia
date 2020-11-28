@@ -1,0 +1,97 @@
+Metadata-Version: 2.1
+Name: blake3
+Version: 0.1.8
+Summary: Python bindings for the Rust blake3 crate
+Home-Page: https://github.com/oconnor663/blake3-py
+Author: Jack O'Connor <oconnor663@gmail.com>
+Author-Email: Jack O'Connor <oconnor663@gmail.com>
+License: CC0-1.0 OR Apache-2.0
+Description-Content-Type: text/markdown; charset=UTF-8; variant=GFM
+
+# blake3-py [![Actions Status](https://github.com/oconnor663/blake3-py/workflows/tests/badge.svg)](https://github.com/oconnor663/blake3-py/actions) [![PyPI version](https://badge.fury.io/py/blake3.svg)](https://pypi.python.org/pypi/blake3)
+
+Python bindings for the [official Rust implementation of
+BLAKE3](https://github.com/BLAKE3-team/BLAKE3), based on
+[PyO3](https://github.com/PyO3/pyo3). These bindings expose all the
+features of BLAKE3, including extendable output, keying, and
+multithreading.
+
+## Examples
+
+```python
+from blake3 import blake3, KEY_LEN, OUT_LEN
+
+# Hash some input all at once. The input can be bytes, a bytearray, or a memoryview.
+hash1 = blake3(b"foobarbaz").digest()
+
+# Hash the same input incrementally.
+hasher = blake3()
+hasher.update(b"foo")
+hasher.update(b"bar")
+hasher.update(b"baz")
+hash2 = hasher.digest()
+assert hash1 == hash2
+
+# Hexadecimal output.
+print("The hash of 'hello world' is", blake3(b"hello world").hexdigest())
+
+# Use the keyed hashing mode, which takes a 32-byte key.
+zero_key = b"\0" * KEY_LEN
+message = b"a message to authenticate"
+mac = blake3(message, key=zero_key).digest()
+
+# Use the key derivation mode, which takes a context string. Context
+# strings should be hardcoded, globally unique, and application-specific.
+example_context = "blake3-py 2020-03-04 11:13:10 example context"
+key_material = b"some super secret key material"
+derived_key = blake3(key_material, context=example_context).digest()
+
+# Extendable output. The default OUT_LEN is 32 bytes.
+extended = blake3(b"foo").digest(length=100)
+assert extended[:OUT_LEN] == blake3(b"foo").digest()
+assert extended[75:100] == blake3(b"foo").digest(length=25, seek=75)
+
+# Hash a large input with multithreading. Note that this can be slower
+# for short inputs, and you should benchmark it for your use case on
+# your platform. As a rule of thumb, don't use multithreading for inputs
+# shorter than 1 MB.
+large_input = bytearray(1_000_000)
+hash3 = blake3(large_input, multithreading=True).digest()
+
+# Copy a hasher that has already accepted some input.
+hasher1 = blake3(b"foo")
+hasher2 = hasher1.copy()
+hasher1.update(b"bar")
+hasher2.update(b"baz")
+assert hasher1.digest() == blake3(b"foobar").digest()
+assert hasher2.digest() == blake3(b"foobaz").digest()
+```
+
+## Installation
+
+```
+pip install blake3
+```
+
+As usual with Pip, you might need to use `sudo` or the `--user` flag
+with the command above, depending on how you installed Python on your
+system.
+
+There are binary wheels [available on
+PyPI](https://pypi.org/project/blake3/#files) for most environments. But
+if you're building the source distribution, or if a binary wheel isn't
+available for your environment, you'll need to [install the Rust
+toolchain](https://rustup.rs).
+
+## Thread Safety and the GIL
+
+Like the `hashlib` functions in the Python standard library, we release
+the GIL while hashing, to avoid blocking other threads for a potentially
+long time. However, this allows race conditions: it's possible for other
+threads to access a hasher or an input buffer while hashing is going on.
+This is worse than an ordinary Python race condition. It's undefined
+behavior in the C/C++/Rust sense. But this seems to be the standard way
+to do hashing in Python. In any case, it should be rare for real world
+programs to share a hasher between threads. For more details about this
+issue, see the comments on usafe code in `lib.rs`.
+

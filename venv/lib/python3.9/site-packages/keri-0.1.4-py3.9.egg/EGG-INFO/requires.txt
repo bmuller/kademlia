@@ -1,0 +1,9 @@
+lmdb>=0.99
+pysodium>=0.7.5
+blake3>=0.1.6
+msgpack>=1.0.0
+simplejson>=3.17.2
+cbor2>=5.1.2
+multidict>=4.7.6
+orderedset>=2.0.3
+hio>=0.1.1

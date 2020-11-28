@@ -1,0 +1,49 @@
+Metadata-Version: 2.1
+Name: cbor2
+Version: 5.1.2
+Summary: Pure Python CBOR (de)serializer with extensive tag support
+Home-page: UNKNOWN
+Author: Alex Grönholm
+Author-email: alex.gronholm@nextday.fi
+Maintainer: Kio Smallwood (Sekenre)
+Maintainer-email: kio@mothers-arms.co.uk
+License: MIT
+Project-URL: Documentation, https://cbor2.readthedocs.org/en/latest/
+Project-URL: Source Code, https://github.com/agronholm/cbor2
+Project-URL: Issue Tracker, https://github.com/agronholm/cbor2/issues
+Description: .. image:: https://travis-ci.com/agronholm/cbor2.svg?branch=master
+          :target: https://travis-ci.com/agronholm/cbor2
+          :alt: Build Status
+        .. image:: https://coveralls.io/repos/github/agronholm/cbor2/badge.svg?branch=master
+          :target: https://coveralls.io/github/agronholm/cbor2?branch=master
+          :alt: Code Coverage
+        .. image:: https://readthedocs.org/projects/cbor2/badge/?version=latest
+          :target: https://cbor2.readthedocs.io/en/latest/?badge=latest
+          :alt: Documentation Status
+        
+        This library provides encoding and decoding for the Concise Binary Object Representation (CBOR)
+        (`RFC 7049`_) serialization format. `Read the docs <https://cbor2.readthedocs.io/>`_ to learn more.
+        
+        It is implemented in pure python with an optional C backend and is compatible with versions 2.7 through to 3.7.
+        
+        On cPython>=3.3 cbor2 can use a built in C module for performance similar to how ``pickle``
+        wraps the ``_pickle`` C module in the Python Standard Library. On Windows, this is restricted to cPython>=3.5.
+        
+        On PyPy, cbor2 runs with almost identical performance to the C backend.
+        
+        .. _RFC 7049: https://tools.ietf.org/html/rfc7049
+        
+Keywords: serialization cbor
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Provides-Extra: test

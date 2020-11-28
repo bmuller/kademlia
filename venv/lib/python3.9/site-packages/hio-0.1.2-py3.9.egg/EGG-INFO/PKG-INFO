@@ -1,0 +1,24 @@
+Metadata-Version: 1.2
+Name: hio
+Version: 0.1.2
+Summary: Hierarchical Concurrency with Async IO
+Home-page: https://github.com/ProSapien/hio
+Author: Samuel M. Smith
+Author-email: smith.samuel.m@gmail.com
+License: Apache Software License 2.0
+Project-URL: Documentation, https://hio.readthedocs.io/
+Project-URL: Changelog, https://hio.readthedocs.io/en/latest/changelog.html
+Project-URL: Issue Tracker, https://github.com/ProSapien/hio/issues
+Description: HIO Hierarchical Concurrency and Asynchronous IO Library. Rich structured contextual concurrrent coroutines with asynchrounous IO modules.
+Keywords: hierarchical concurrency,async io,rich contextual concurrency,structured concurrency
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: Unix
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Utilities
+Requires-Python: >=3.8.*
