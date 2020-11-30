@@ -34,7 +34,7 @@ def gen_nontransferable_serialized_aid():
         # verify signature
         assert skp0.verfer.verify(tsig0.raw, tser0.raw)
 
-        # TODO determine why this gives an error when enabled
+        # not sure why this errors out when enabled; I guess kevers can't be used with nontransferable ids
         # kever = Kever(serder=tser0, sigers=[tsig0], baser=bsr)  # no error
 
         # return base 64 serialization of signed aid
@@ -103,4 +103,4 @@ def gen_serialized_aid(witnesses):
     
         # return base 64 serialization of signed aid
         # return tsig0.qb64
-        return tsig0.qb64
+        return tsig0, tser0, tsig0.qb64

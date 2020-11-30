@@ -70,17 +70,15 @@ class KeriStorage(IStorage):
 
         if isinstance(value, str):
             self.baser.setVal(db, key, value.encode())
-        self.baser.setVal(db, key, value)
+        else:
+            self.baser.setVal(db, key, value)
 
     def __getitem__(self, key):
         """
         Get the given key.  If item doesn't exist, raises C{KeyError}
         """
         db = self._get_baser_db(key)
-        try:
-            value = self.baser.getVal(db, key)
-        except Exception as e:
-            print(e)
+        value = self.baser.getVal(db, key)
         return bytes(value)
 
     def __repr__(self):
@@ -91,10 +89,7 @@ class KeriStorage(IStorage):
         Get given key.  If not found, return default.
         """
         db = self._get_baser_db(key)
-        try:
-            value = self.baser.getVal(db, key)
-        except Exception as e:
-            print(e)
+        value = self.baser.getVal(db, key)
         return default if value is None else bytes(value)
 
     def iter_older_than(self, seconds_old):
