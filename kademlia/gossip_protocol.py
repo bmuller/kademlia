@@ -13,7 +13,7 @@ class GossipProtocol(RPCProtocol):
         RPCProtocol.__init__(self)
         self.neighbours = dict()
         self.source_node = source_node
-        self.k = ksize
+        self.k = 1
         self.M = 3
         self.history_of_request_ids = set()
 
@@ -23,6 +23,8 @@ class GossipProtocol(RPCProtocol):
 
     def accept_connection(self, node_id, node_address):
         log.debug("Accept connection from node %s with id %s", str(node_address), str(node_id))
+        source = Node(node_id, node_address[0], node_address[1])
+        self.welcome_if_new(source)
         self.neighbours[node_id] = Node(node_id, node_address[0], node_address[1])
         self.connection_accepted(node_address, self.source_node.id)
 
@@ -49,12 +51,21 @@ class GossipProtocol(RPCProtocol):
                 self.accept_connection(node_id, node_address)
             else:
                 if m == self.M:
+                    self.remove_any_neighbour(sender_id)
                     self.accept_connection(node_id, node_address)
                 else:
                     m += 1
+                    neigbours_found = False
                     for key in self.neighbours.keys():
-                        if self.neighbours[key].id != sender_id:
-                            self.connect(self.source_node.id, node_id, request_id, m, node_address)
+                        neigbour = self.neighbours[key]
+                        if neigbour.id != sender_id:
+                            neigbours_found = True
+                            self.connect((neigbour.ip, neigbour.port),
+                                         self.source_node.id, node_id, request_id, m, node_address)
+                    if not neigbours_found:
+                        self.remove_any_neighbour(sender_id)
+                        self.accept_connection(node_id, node_address)
+
         else:
             self.accept_connection(node_id, node_address)
 
@@ -64,8 +75,6 @@ class GossipProtocol(RPCProtocol):
         return sender
 
     def rpc_ping(self, sender, nodeid):
-        source = Node(nodeid, sender[0], sender[1])
-        self.welcome_if_new(source)
         return self.source_node.id
 
     def rpc_store(self, sender, nodeid, key, value):
