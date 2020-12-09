@@ -1,6 +1,6 @@
-# Discovery Mechanism for KERI using Kademlia
+# Keridemlia: Discovery Mechanism for KERI using Kademlia
 
-[KERI](https://github.com/decentralized-identity/keri) is an end-to-end identity system for the Interjnet that places the primary root-of-trust in self-certifying Autonomic Identifiers (AIDs). Running KERI in indirect mode requires users or controllers to know mappings of AIDs to witness IP addresses in order to communicate and verify identities. KERID (a possible name for this project) solves this problem by providing a discovery mechanism that maps AIDs to witness IDs and witness IDs to witness IPs. This is done using a Distributed Hash Table, Kademlia.
+[KERI](https://github.com/decentralized-identity/keri) is an end-to-end identity system for the Interjnet that places the primary root-of-trust in self-certifying Autonomic Identifiers (AIDs). Running KERI in indirect mode requires users or controllers to know mappings of AIDs to witness IP addresses in order to communicate and verify identities. Keridemlia solves this problem by providing a discovery mechanism that maps AIDs to witness IDs and witness IDs to witness IPs. This is done using a Distributed Hash Table, Kademlia.
 
 ## API
 
@@ -25,6 +25,6 @@ python3 primary.py
 
 ## TODO
 
-KERID is in initial stages of development. Verification is supposed to happen before data is published to the DHT, but this has not been figured out yet. Because of this, the id/ip APIs are disabled and the aid/id APIs work without verification.
+Keridemlia is in initial stages of development. Verification is supposed to happen before data is published to the DHT, but this has not been figured out yet. Because of this, the id/ip APIs are disabled and the aid/id APIs work without verification.
 
 After verification is complete and all APIs are working, next steps might include local caching for further optimizations, as well as an signed IP address type to store for id/ip APIs.
