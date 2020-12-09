@@ -18,16 +18,6 @@ class KademliaProtocol(RPCProtocol):
         self.storage = storage
         self.source_node = source_node
 
-    def get_refresh_ids(self):
-        """
-        Get ids to search for to keep old buckets up to date.
-        """
-        ids = []
-        for bucket in self.router.lonely_buckets():
-            rid = random.randint(*bucket.range).to_bytes(20, byteorder='big')
-            ids.append(rid)
-        return ids
-
     def rpc_stun(self, sender):  # pylint: disable=no-self-use
         return sender
 

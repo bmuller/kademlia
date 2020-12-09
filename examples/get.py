@@ -15,14 +15,21 @@ log = logging.getLogger('kademlia')
 log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
-async def run():
+
+def run():
+    loop = asyncio.get_event_loop()
+    loop.set_debug(True)
     server = Server()
-    await server.listen(8469)
+    loop.run_until_complete(server.listen(8469))
     bootstrap_node = ("127.0.0.1", 8468)
-    await server.bootstrap([bootstrap_node])
+    loop.run_until_complete(server.bootstrap(bootstrap_node))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.stop()
+        loop.close()
 
-    result = await server.get("test_key")
-    print("Get result:", result)
-    # server.stop()
 
-asyncio.run(run())
+run()

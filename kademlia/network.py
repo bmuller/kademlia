@@ -6,7 +6,7 @@ import pickle
 import asyncio
 import logging
 
-from kademlia.protocol import KademliaProtocol
+from kademlia.gossip_protocol import GossipProtocol
 from kademlia.utils import digest
 from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
@@ -23,7 +23,7 @@ class Server:
     created to start listening as an active node on the network.
     """
 
-    protocol_class = KademliaProtocol
+    protocol_class = GossipProtocol
 
     def __init__(self, ksize=20, alpha=3, node_id=None, storage=None):
         """
@@ -56,7 +56,7 @@ class Server:
             self.save_state_loop.cancel()
 
     def _create_protocol(self):
-        return self.protocol_class(self.node, self.storage, self.ksize)
+        return self.protocol_class(self.node, self.ksize)
 
     async def listen(self, port, interface='0.0.0.0'):
         """
@@ -65,39 +65,11 @@ class Server:
         Provide interface="::" to accept ipv6 address
         """
         loop = asyncio.get_event_loop()
-        listen = loop.create_datagram_endpoint(self._create_protocol,
-                                               local_addr=(interface, port))
+        self.transport, self.protocol = await loop.create_datagram_endpoint(self._create_protocol,
+                                                                            local_addr=(interface,
+                                                                                        port))
         log.info("Node %i listening on %s:%i",
                  self.node.long_id, interface, port)
-        self.transport, self.protocol = await listen
-        # finally, schedule refreshing table
-        self.refresh_table()
-
-    def refresh_table(self):
-        log.debug("Refreshing routing table")
-        asyncio.ensure_future(self._refresh_table())
-        loop = asyncio.get_event_loop()
-        self.refresh_loop = loop.call_later(3600, self.refresh_table)
-
-    async def _refresh_table(self):
-        """
-        Refresh buckets that haven't had any lookups in the last hour
-        (per section 2.3 of the paper).
-        """
-        results = []
-        for node_id in self.protocol.get_refresh_ids():
-            node = Node(node_id)
-            nearest = self.protocol.router.find_neighbors(node, self.alpha)
-            spider = NodeSpiderCrawl(self.protocol, node, nearest,
-                                     self.ksize, self.alpha)
-            results.append(spider.find())
-
-        # do our crawling
-        await asyncio.gather(*results)
-
-        # now republish keys older than one hour
-        for dkey, value in self.storage.iter_older_than(3600):
-            await self.set_digest(dkey, value)
 
     def bootstrappable_neighbors(self):
         """
@@ -112,22 +84,23 @@ class Server:
         neighbors = self.protocol.router.find_neighbors(self.node)
         return [tuple(n)[-2:] for n in neighbors]
 
-    async def bootstrap(self, addrs):
+    def build_unique_code(self):
+        return digest(random.getrandbits(255))
+
+    async def bootstrap(self, address):
         """
         Bootstrap the server by connecting to other known nodes in the network.
 
         Args:
-            addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP
+            addrs: (ip, port) `tuple` pair.  Note that only IP
                    addresses are acceptable - hostnames will cause an error.
         """
-        log.debug("Attempting to bootstrap node with %i initial contacts",
-                  len(addrs))
-        cos = list(map(self.bootstrap_node, addrs))
-        gathered = await asyncio.gather(*cos)
-        nodes = [node for node in gathered if node is not None]
-        spider = NodeSpiderCrawl(self.protocol, self.node, nodes,
-                                 self.ksize, self.alpha)
-        return await spider.find()
+        log.debug("Attempting to bootstrap node with %i initial contact",
+                  len(address))
+        gathered = await self.bootstrap_node(address)
+        request_id = self.build_unique_code()
+        if gathered is not None:
+            await self.protocol.call_connect(address, request_id)
 
     async def bootstrap_node(self, addr):
         result = await self.protocol.ping(addr, self.node.id)
