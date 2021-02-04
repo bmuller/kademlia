@@ -9,7 +9,7 @@ from kademlia.node import Node
 from kademlia.routing import RoutingTable
 
 
-@pytest.yield_fixture
+@pytest.fixture()
 def bootstrap_node(event_loop):
     server = Server()
     event_loop.run_until_complete(server.listen(8468))
