@@ -117,9 +117,10 @@ class Server:
         Bootstrap the server by connecting to other known nodes in the network.
 
         Args:
-            addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP
+            addrs: An iterable of (ip, port) `tuple` pairs.  Note that only IP
                    addresses are acceptable - hostnames will cause an error.
         """
+        addrs = list(addrs)
         log.debug("Attempting to bootstrap node with %i initial contacts",
                   len(addrs))
         cos = list(map(self.bootstrap_node, addrs))
