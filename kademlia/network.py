@@ -186,7 +186,7 @@ class Server:
 
         # if this node is close too, then store here as well
         biggest = max([n.distance_to(node) for n in nodes])
-        stored_in_self = False 
+        stored_in_self = False
         if self.node.distance_to(node) < biggest:
             self.storage[dkey] = value
             stored_in_self = True
