@@ -15,16 +15,12 @@ server = Server()
 
 
 def parse_arguments():
-    # Create argument parser
     parser = argparse.ArgumentParser()
 
     # Optional arguments
     parser.add_argument("-i", "--ip", help="IP address of existing node", type=str, default=None)
     parser.add_argument("-p", "--port", help="port number of existing node", type=int, default=None)
-    parser.add_argument("-k", "--key", help="key", type=str, default=None)
-    parser.add_argument("-v", "--value", help="value", type=str, default=None)
 
-    # Parse arguments
     return parser.parse_args()
 
 
@@ -32,8 +28,6 @@ async def connect_to_bootstrap_node(args):
     await server.listen(8469)
     bootstrap_node = (args.ip, int(args.port))
     await server.bootstrap([bootstrap_node])
-    await server.set(args.key, args.value)
-    server.stop()
 
 
 def create_bootstrap_node():
