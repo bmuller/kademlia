@@ -25,9 +25,7 @@ def parse_arguments():
     parser.add_argument("-v", "--value", help="value", type=str, default=None)
 
     # Parse arguments
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 async def connect_to_bootstrap_node(args):
