@@ -19,8 +19,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     # Optional arguments
-    parser.add_argument("-i", "--ip", help="IP address of node", type=str, default=None)
-    parser.add_argument("-p", "--port", help="port number of node", type=int, default=None)
+    parser.add_argument("-i", "--ip", help="IP address of existing node", type=str, default=None)
+    parser.add_argument("-p", "--port", help="port number of existing node", type=int, default=None)
     parser.add_argument("-k", "--key", help="key", type=str, default=None)
     parser.add_argument("-v", "--value", help="value", type=str, default=None)
 
