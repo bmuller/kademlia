@@ -1,7 +1,6 @@
 # Python Distributed Hash Table
 [![Build Status](https://github.com/bmuller/kademlia/actions/workflows/ci.yml/badge.svg)](https://github.com/bmuller/kademlia/actions/workflows/ci.yml)
 [![Docs Status](https://readthedocs.org/projects/kademlia/badge/?version=latest)](http://kademlia.readthedocs.org)
-[![Coverage Status](https://coveralls.io/repos/github/bmuller/twistar/badge.svg?branch=master)](https://coveralls.io/github/bmuller/twistar?branch=master)
 
 **Documentation can be found at [kademlia.readthedocs.org](http://kademlia.readthedocs.org/).**
 
