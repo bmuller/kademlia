@@ -24,10 +24,21 @@ def parse_arguments():
     return parser.parse_args()
 
 
-async def connect_to_bootstrap_node(args):
-    await server.listen(8469)
+def connect_to_bootstrap_node(args):
+    loop = asyncio.get_event_loop()
+    loop.set_debug(True)
+
+    loop.run_until_complete(server.listen(8469))
     bootstrap_node = (args.ip, int(args.port))
-    await server.bootstrap([bootstrap_node])
+    loop.run_until_complete(server.bootstrap([bootstrap_node]))
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.stop()
+        loop.close()
 
 
 def create_bootstrap_node():
@@ -49,7 +60,7 @@ def main():
     args = parse_arguments()
 
     if args.ip and args.port:
-        asyncio.run(connect_to_bootstrap_node(args))
+        connect_to_bootstrap_node(args)
     else:
         create_bootstrap_node()
 
