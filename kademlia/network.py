@@ -220,7 +220,8 @@ class Server:
         log.info("Loading state from %s", fname)
         with open(fname, 'rb') as file:
             data = pickle.load(file)
-        svr = Server(data['ksize'], data['alpha'], data['id'])
+        svr = eval(cls.__name__+"(data['ksize'], data['alpha'], data['id'])")
+
         await svr.listen(port, interface)
         if data['neighbors']:
             await svr.bootstrap(data['neighbors'])
