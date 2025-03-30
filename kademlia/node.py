@@ -1,5 +1,5 @@
-from operator import itemgetter
 import heapq
+from operator import itemgetter
 
 
 class Node:
@@ -9,6 +9,7 @@ class Node:
     This class should generally not be instantiated directly, as it is a low
     level construct mostly used by the router.
     """
+
     def __init__(self, node_id, ip=None, port=None):
         """
         Create a Node instance.
@@ -18,8 +19,8 @@ class Node:
             ip (string): Optional IP address where this Node lives
             port (int): Optional port for this Node (set when IP is set)
         """
-        self.id = node_id  # pylint: disable=invalid-name
-        self.ip = ip  # pylint: disable=invalid-name
+        self.id = node_id
+        self.ip = ip
         self.port = port
         self.long_id = int(node_id.hex(), 16)
 
@@ -42,13 +43,14 @@ class Node:
         return repr([self.long_id, self.ip, self.port])
 
     def __str__(self):
-        return "%s:%s" % (self.ip, str(self.port))
+        return f"{self.ip}:{self.port}"
 
 
 class NodeHeap:
     """
     A heap of nodes ordered by distance to a given node.
     """
+
     def __init__(self, node, maxsize):
         """
         Constructor.
@@ -118,10 +120,7 @@ class NodeHeap:
         return iter(map(itemgetter(1), nodes))
 
     def __contains__(self, node):
-        for _, other in self.heap:
-            if node.id == other.id:
-                return True
-        return False
+        return any(node.id == other.id for _, other in self.heap)
 
     def get_uncontacted(self):
         return [n for n in self if n.id not in self.contacted]

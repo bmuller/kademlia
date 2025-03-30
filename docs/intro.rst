@@ -10,7 +10,7 @@ Usage
 =====
 To start a new network, create the first node.  Future nodes will connect to this first node (and any other nodes you know about) to create the network.
 
-.. literalinclude:: ../examples/first_node.py
+.. literalinclude:: ../examples/node.py
 
 Here's an example of bootstrapping a new node against a known node and then setting a value:
 

@@ -11,17 +11,16 @@ async def test_storing(bootstrap_node):
     server = Server()
     await server.listen(bootstrap_node[1] + 1)
     await server.bootstrap([bootstrap_node])
-    await server.set('key', 'value')
-    result = await server.get('key')
+    await server.set("key", "value")
+    result = await server.get("key")
 
-    assert result == 'value'
+    assert result == "value"
 
     server.stop()
 
 
 class TestSwappableProtocol:
-
-    def test_default_protocol(self):  # pylint: disable=no-self-use
+    def test_default_protocol(self):
         """
         An ordinary Server object will initially not have a protocol, but will
         have a KademliaProtocol object as its protocol after its listen()
@@ -34,7 +33,7 @@ class TestSwappableProtocol:
         assert isinstance(server.protocol, KademliaProtocol)
         server.stop()
 
-    def test_custom_protocol(self):  # pylint: disable=no-self-use
+    def test_custom_protocol(self):
         """
         A subclass of Server which overrides the protocol_class attribute will
         have an instance of that class as its protocol after its listen()

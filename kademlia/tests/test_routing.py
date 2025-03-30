@@ -1,9 +1,10 @@
 from random import shuffle
+
 from kademlia.routing import KBucket, TableTraverser
 
 
 class TestKBucket:
-    def test_split(self, mknode):  # pylint: disable=no-self-use
+    def test_split(self, mknode):
         bucket = KBucket(0, 10, 5)
         bucket.add_node(mknode(intid=5))
         bucket.add_node(mknode(intid=6))
@@ -13,11 +14,11 @@ class TestKBucket:
         assert len(two) == 1
         assert two.range == (6, 10)
 
-    def test_split_no_overlap(self):  # pylint: disable=no-self-use
-        left, right = KBucket(0, 2 ** 160, 20).split()
+    def test_split_no_overlap(self):
+        left, right = KBucket(0, 2**160, 20).split()
         assert (right.range[0] - left.range[1]) == 1
 
-    def test_add_node(self, mknode):  # pylint: disable=no-self-use
+    def test_add_node(self, mknode):
         # when full, return false
         bucket = KBucket(0, 10, 2)
         assert bucket.add_node(mknode()) is True
@@ -33,7 +34,7 @@ class TestKBucket:
         for index, node in enumerate(bucket.get_nodes()):
             assert node == nodes[index]
 
-    def test_remove_node(self, mknode):  # pylint: disable=no-self-use
+    def test_remove_node(self, mknode):
         k = 3
         bucket = KBucket(0, 10, k)
         nodes = [mknode() for _ in range(10)]
@@ -49,8 +50,8 @@ class TestKBucket:
         assert list(replacement_nodes.values()) == nodes[k:]
 
         bucket.remove_node(nodes.pop(0))
-        assert list(bucket.nodes.values()) == nodes[:k-1] + nodes[-1:]
-        assert list(replacement_nodes.values()) == nodes[k-1:-1]
+        assert list(bucket.nodes.values()) == nodes[: k - 1] + nodes[-1:]
+        assert list(replacement_nodes.values()) == nodes[k - 1 : -1]
 
         shuffle(nodes)
         for node in nodes:
@@ -58,14 +59,14 @@ class TestKBucket:
         assert not bucket
         assert not replacement_nodes
 
-    def test_in_range(self, mknode):  # pylint: disable=no-self-use
+    def test_in_range(self, mknode):
         bucket = KBucket(0, 10, 10)
         assert bucket.has_in_range(mknode(intid=5)) is True
         assert bucket.has_in_range(mknode(intid=11)) is False
         assert bucket.has_in_range(mknode(intid=10)) is True
         assert bucket.has_in_range(mknode(intid=0)) is True
 
-    def test_replacement_factor(self, mknode):  # pylint: disable=no-self-use
+    def test_replacement_factor(self, mknode):
         k = 3
         factor = 2
         bucket = KBucket(0, 10, k, replacementNodeFactor=factor)
@@ -75,22 +76,18 @@ class TestKBucket:
 
         replacement_nodes = bucket.replacement_nodes
         assert len(list(replacement_nodes.values())) == k * factor
-        assert list(replacement_nodes.values()) == nodes[k + 1:]
+        assert list(replacement_nodes.values()) == nodes[k + 1 :]
         assert nodes[k] not in list(replacement_nodes.values())
 
 
-# pylint: disable=too-few-public-methods
 class TestRoutingTable:
-    # pylint: disable=no-self-use
     def test_add_contact(self, fake_server, mknode):
         fake_server.router.add_contact(mknode())
         assert len(fake_server.router.buckets) == 1
         assert len(fake_server.router.buckets[0].nodes) == 1
 
 
-# pylint: disable=too-few-public-methods
 class TestTableTraverser:
-    # pylint: disable=no-self-use
     def test_iteration(self, fake_server, mknode):
         """
         Make 10 nodes, 5 buckets, two nodes add to one bucket in order,
@@ -112,8 +109,18 @@ class TestTableTraverser:
         fake_server.router.buckets = buckets
 
         # expected nodes order
-        expected_nodes = [nodes[5], nodes[4], nodes[3], nodes[2], nodes[7],
-                          nodes[6], nodes[1], nodes[0], nodes[9], nodes[8]]
+        expected_nodes = [
+            nodes[5],
+            nodes[4],
+            nodes[3],
+            nodes[2],
+            nodes[7],
+            nodes[6],
+            nodes[1],
+            nodes[0],
+            nodes[9],
+            nodes[8],
+        ]
 
         start_node = nodes[4]
         table_traverser = TableTraverser(fake_server.router, start_node)

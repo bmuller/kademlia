@@ -1,6 +1,6 @@
-import random
 import asyncio
 import logging
+import random
 
 from rpcudp.protocol import RPCProtocol
 
@@ -8,7 +8,7 @@ from kademlia.node import Node
 from kademlia.routing import RoutingTable
 from kademlia.utils import digest
 
-log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+log = logging.getLogger(__name__)
 
 
 class KademliaProtocol(RPCProtocol):
@@ -24,11 +24,11 @@ class KademliaProtocol(RPCProtocol):
         """
         ids = []
         for bucket in self.router.lonely_buckets():
-            rid = random.randint(*bucket.range).to_bytes(20, byteorder='big')
+            rid = random.randint(*bucket.range).to_bytes(20, byteorder="big")
             ids.append(rid)
         return ids
 
-    def rpc_stun(self, sender):  # pylint: disable=no-self-use
+    def rpc_stun(self, sender):
         return sender
 
     def rpc_ping(self, sender, nodeid):
@@ -39,14 +39,14 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
         self.welcome_if_new(source)
-        log.debug("got a store request from %s, storing '%s'='%s'",
-                  sender, key.hex(), value)
+        log.debug(
+            "got a store request from %s, storing '%s'='%s'", sender, key.hex(), value
+        )
         self.storage[key] = value
         return True
 
     def rpc_find_node(self, sender, nodeid, key):
-        log.info("finding neighbors of %i in local table",
-                 int(nodeid.hex(), 16))
+        log.info("finding neighbors of %i in local table", int(nodeid.hex(), 16))
         source = Node(nodeid, sender[0], sender[1])
         self.welcome_if_new(source)
         node = Node(key)
@@ -59,18 +59,16 @@ class KademliaProtocol(RPCProtocol):
         value = self.storage.get(key, None)
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
-        return {'value': value}
+        return {"value": value}
 
     async def call_find_node(self, node_to_ask, node_to_find):
         address = (node_to_ask.ip, node_to_ask.port)
-        result = await self.find_node(address, self.source_node.id,
-                                      node_to_find.id)
+        result = await self.find_node(address, self.source_node.id, node_to_find.id)
         return self.handle_call_response(result, node_to_ask)
 
     async def call_find_value(self, node_to_ask, node_to_find):
         address = (node_to_ask.ip, node_to_ask.port)
-        result = await self.find_value(address, self.source_node.id,
-                                       node_to_find.id)
+        result = await self.find_value(address, self.source_node.id, node_to_find.id)
         return self.handle_call_response(result, node_to_ask)
 
     async def call_ping(self, node_to_ask):

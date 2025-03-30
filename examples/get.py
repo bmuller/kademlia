@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 import sys
 
 from kademlia.network import Server
@@ -9,11 +9,12 @@ if len(sys.argv) != 4:
     sys.exit(1)
 
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
-log = logging.getLogger('kademlia')
+log = logging.getLogger("kademlia")
 log.addHandler(handler)
 log.setLevel(logging.DEBUG)
+
 
 async def run():
     server = Server()
@@ -24,5 +25,6 @@ async def run():
     result = await server.get(sys.argv[3])
     print("Get result:", result)
     server.stop()
+
 
 asyncio.run(run())

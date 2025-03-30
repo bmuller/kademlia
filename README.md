@@ -63,8 +63,8 @@ log.addHandler(logging.StreamHandler())
 To run tests:
 
 ```
-pip install -r dev-requirements.txt
-pytest
+uv sync --dev
+uv run pytest
 ```
 
 ## Reporting Issues

@@ -1,7 +1,0 @@
-pycodestyle>=2.5.0
-pylint>=2.5.0
-sphinx>=3.0.3
-pytest>=5.4.1
-pytest-asyncio>=0.11.0
-pytest-cov>=2.8.1
-wheel>=0.36.2

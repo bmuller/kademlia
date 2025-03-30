@@ -1,13 +1,13 @@
 import argparse
-import logging
 import asyncio
+import logging
 
 from kademlia.network import Server
 
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
-log = logging.getLogger('kademlia')
+log = logging.getLogger("kademlia")
 log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
@@ -18,8 +18,12 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     # Optional arguments
-    parser.add_argument("-i", "--ip", help="IP address of existing node", type=str, default=None)
-    parser.add_argument("-p", "--port", help="port number of existing node", type=int, default=None)
+    parser.add_argument(
+        "-i", "--ip", help="IP address of existing node", type=str, default=None
+    )
+    parser.add_argument(
+        "-p", "--port", help="port number of existing node", type=int, default=None
+    )
 
     return parser.parse_args()
 

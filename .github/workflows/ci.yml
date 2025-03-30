@@ -6,12 +6,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.6', '3.8', '3.9']
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+    name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -r dev-requirements.txt
-      - run: pip install .
-      - run: pytest
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Install the project
+        run: uv sync --all-extras --dev
+      - name: Check format
+        run: uv run ruff format --check
+      - name: Lint
+        run: uv run ruff check --output-format=github .
+      - name: Tests
+        run: uv run pytest

@@ -1,18 +1,17 @@
-from collections import Counter
 import logging
+from collections import Counter
 
 from kademlia.node import Node, NodeHeap
 from kademlia.utils import gather_dict
 
+log = logging.getLogger(__name__)
 
-log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
-
-# pylint: disable=too-few-public-methods
 class SpiderCrawl:
     """
     Crawl the network and look for given 160-bit keys.
     """
+
     def __init__(self, protocol, node, peers, ksize, alpha):
         """
         Create a new C{SpiderCrawl}er.
@@ -115,8 +114,9 @@ class ValueSpiderCrawl(SpiderCrawl):
         """
         value_counts = Counter(values)
         if len(value_counts) != 1:
-            log.warning("Got multiple values for key %i: %s",
-                        self.node.long_id, str(values))
+            log.warning(
+                "Got multiple values for key %i: %s", self.node.long_id, str(values)
+            )
         value = value_counts.most_common(1)[0][0]
 
         peer = self.nearest_without_value.popleft()
@@ -172,7 +172,7 @@ class RPCFindResponse:
         return isinstance(self.response[1], dict)
 
     def get_value(self):
-        return self.response[1]['value']
+        return self.response[1]["value"]
 
     def get_node_list(self):
         """
