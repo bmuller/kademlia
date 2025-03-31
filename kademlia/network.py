@@ -181,11 +181,13 @@ class Server:
 
         # if this node is close too, then store here as well
         biggest = max([n.distance_to(node) for n in nodes])
+        stored_in_self = False
         if self.node.distance_to(node) < biggest:
             self.storage[dkey] = value
+            stored_in_self = True
         results = [self.protocol.call_store(n, dkey, value) for n in nodes]
         # return true only if at least one store call succeeded
-        return any(await asyncio.gather(*results))
+        return any(await asyncio.gather(*results)) or stored_in_self
 
     def save_state(self, fname):
         """
