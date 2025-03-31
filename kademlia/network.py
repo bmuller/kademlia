@@ -153,6 +153,26 @@ class Server:
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return await spider.find()
 
+    async def get_digest(self, dkey):
+        """
+        Get a SHA1 digest key (bytes) if the network has it.
+
+        Returns:
+            :class:`None` if not found, the value otherwise.
+        """
+        log.info("Looking up key %s", dkey)
+        # if this node has it, return it
+        if self.storage.get(dkey) is not None:
+            return self.storage.get(dkey)
+        node = Node(dkey)
+        nearest = self.protocol.router.find_neighbors(node)
+        if not nearest:
+            log.warning("There are no known neighbors to get key %s", dkey)
+            return None
+        spider = ValueSpiderCrawl(self.protocol, node, nearest,
+                                  self.ksize, self.alpha)
+        return await spider.find()
+
     async def set(self, key, value):
         """
         Set the given string key to the given value in the network.
